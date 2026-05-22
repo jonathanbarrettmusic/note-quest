@@ -1673,32 +1673,38 @@ function playMusic(key) {
   if (!src || src === _musSrc) return;
   _musSrc = src;
 
-  // fade out the old track
+  // Stop old track immediately, then fade its volume down
   if (_mus) {
     const old = _mus;
-    (function fade() {
-      old.volume = Math.max(0, old.volume - 0.05);
-      if (old.volume > 0) requestAnimationFrame(fade);
-      else { old.pause(); old.src = ''; }
-    })();
+    _mus = null;
+    const out = setInterval(() => {
+      old.volume = Math.max(0, old.volume - 0.06);
+      if (old.volume <= 0) { clearInterval(out); old.pause(); }
+    }, 50);
   }
 
-  // start the new track, fade in
+  // Start new track and fade in
   const a = new Audio(src);
   a.loop = true;
   a.volume = 0;
   _mus = a;
-  a.play().catch(() => {}); // silently ignore autoplay block
-  a.addEventListener('playing', function fadeIn() {
-    if (a !== _mus) return; // superseded
-    a.volume = Math.min(MUSIC_VOL, a.volume + 0.025);
-    if (a.volume < MUSIC_VOL) requestAnimationFrame(fadeIn);
-  }, { once: true });
+  a.play().catch(() => {});
+  const inn = setInterval(() => {
+    if (_mus !== a) { clearInterval(inn); return; } // superseded
+    a.volume = Math.min(MUSIC_VOL, a.volume + 0.03);
+    if (a.volume >= MUSIC_VOL) clearInterval(inn);
+  }, 50);
 }
 
 function stopMusic() {
-  if (_mus) { _mus.pause(); _mus.src = ''; _mus = null; }
   _musSrc = '';
+  if (!_mus) return;
+  const old = _mus;
+  _mus = null;
+  const out = setInterval(() => {
+    old.volume = Math.max(0, old.volume - 0.06);
+    if (old.volume <= 0) { clearInterval(out); old.pause(); }
+  }, 50);
 }
 
 function setEnvironment(env) {
