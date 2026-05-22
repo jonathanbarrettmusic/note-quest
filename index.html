@@ -1673,38 +1673,21 @@ function playMusic(key) {
   if (!src || src === _musSrc) return;
   _musSrc = src;
 
-  // Stop old track immediately, then fade its volume down
-  if (_mus) {
-    const old = _mus;
-    _mus = null;
-    const out = setInterval(() => {
-      old.volume = Math.max(0, old.volume - 0.06);
-      if (old.volume <= 0) { clearInterval(out); old.pause(); }
-    }, 50);
-  }
-
-  // Start new track and fade in
-  const a = new Audio(src);
-  a.loop = true;
-  a.volume = 0;
-  _mus = a;
-  a.play().catch(() => {});
-  const inn = setInterval(() => {
-    if (_mus !== a) { clearInterval(inn); return; } // superseded
-    a.volume = Math.min(MUSIC_VOL, a.volume + 0.03);
-    if (a.volume >= MUSIC_VOL) clearInterval(inn);
-  }, 50);
+  // Single shared element — impossible to overlap
+  if (!_mus) _mus = new Audio();
+  _mus.pause();
+  _mus.src   = src;
+  _mus.loop  = true;
+  _mus.volume = MUSIC_VOL;
+  _mus.load();              // required on iOS to cancel previous playback
+  _mus.play().catch(() => {});
 }
 
 function stopMusic() {
   _musSrc = '';
   if (!_mus) return;
-  const old = _mus;
-  _mus = null;
-  const out = setInterval(() => {
-    old.volume = Math.max(0, old.volume - 0.06);
-    if (old.volume <= 0) { clearInterval(out); old.pause(); }
-  }, 50);
+  _mus.pause();
+  _mus.src = '';
 }
 
 function setEnvironment(env) {
