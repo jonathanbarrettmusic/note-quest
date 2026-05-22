@@ -442,6 +442,74 @@
       100% { transform: translateY(0)     scale(1);  opacity: 1; }
     }
     .card.dealing { animation: dealCard .3s ease forwards; }
+
+    /* ══════════════════════════════════════════════
+       SCENE ZONE  (enemy in environment)
+    ══════════════════════════════════════════════ */
+    .scene-zone {
+      flex: 1;
+      position: relative; z-index: 1;
+      min-height: 200px;
+      overflow: hidden;
+    }
+    /* subtle ground plane at base of scene */
+    .scene-zone::before {
+      content: ''; position: absolute;
+      bottom: 0; left: 0; right: 0; height: 18%;
+      background: rgba(0,0,0,.28); z-index: 0;
+    }
+
+    .enemy-sprite {
+      position: absolute;
+      bottom: 14%; left: 50%;
+      transform: translateX(-50%);
+      width: 110px; height: 154px;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,.65));
+      z-index: 1;
+    }
+    .enemy-sprite svg { width: 100%; height: 100%; display: block; }
+
+    /* hit animation now targets sprite */
+    .enemy-sprite.enemy-hit { animation: enemyHit .5s ease forwards; }
+
+    /* boss glow uses filter (text-shadow won't work on SVG) */
+    .boss-glow {
+      filter: drop-shadow(0 0 18px #f43f5e) drop-shadow(0 0 6px #f43f5e)
+              drop-shadow(0 8px 18px rgba(0,0,0,.65)) !important;
+    }
+
+    /* enemy HUD overlay */
+    .enemy-hud {
+      position: absolute; top: 12px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.58);
+      backdrop-filter: blur(6px);
+      border-radius: 10px; padding: 5px 14px 7px;
+      min-width: 160px; max-width: 220px;
+      z-index: 2; text-align: center; white-space: nowrap;
+    }
+    .enemy-name { font-size: .78rem; font-weight: 700; color: var(--text); letter-spacing: .02em; }
+    .hud-hp-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+    .hud-hp-bar { flex: 1; height: 8px; border-radius: 4px; }
+    .enemy-hp-text { font-size: .64rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+
+    /* combo badge (repositioned to top-right of scene) */
+    .combo-badge {
+      position: absolute; top: 12px; right: 12px; z-index: 2;
+      font-size: .72rem; font-weight: 800; color: var(--gold);
+      background: rgba(255,215,0,.12); border: 1px solid rgba(255,215,0,.3);
+      border-radius: 20px; padding: .2rem .6rem; display: none;
+    }
+    .combo-badge.visible { display: block; }
+
+    /* timer sits at very bottom of scene zone */
+    .scene-timer-wrap {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 5px; background: rgba(255,255,255,.06); z-index: 3;
+    }
+
+    /* staff zone no longer grows — scene takes the flex space */
+    .staff-zone { flex: 0 0 auto; }
   </style>
 </head>
 <body>
@@ -463,18 +531,18 @@
 <!-- ═══ GAME ═══ -->
 <div id="screen-game" class="screen">
   <div id="game-bg"></div>
-  <!-- Enemy zone -->
-  <div class="enemy-zone">
-    <div class="enemy-row">
-      <div class="enemy-emoji" id="enemy-emoji">👺</div>
-      <div class="enemy-info">
-        <div class="enemy-name" id="enemy-name">Note Goblin</div>
-        <div class="enemy-hp-text"><span id="enemy-hp-cur">40</span> / <span id="enemy-hp-max">40</span> HP</div>
-        <div class="hp-bar-wrap"><div class="hp-bar hp-enemy" id="enemy-hp-bar" style="width:100%"></div></div>
+  <!-- Scene zone -->
+  <div class="scene-zone">
+    <div id="enemy-sprite" class="enemy-sprite"></div>
+    <div class="enemy-hud">
+      <div class="enemy-name" id="enemy-name">Note Goblin</div>
+      <div class="hud-hp-row">
+        <div class="hp-bar-wrap hud-hp-bar"><div class="hp-bar hp-enemy" id="enemy-hp-bar" style="width:100%"></div></div>
+        <span class="enemy-hp-text"><span id="enemy-hp-cur">80</span>/<span id="enemy-hp-max">80</span></span>
       </div>
-      <div class="combo-badge" id="combo-badge">COMBO ×2</div>
     </div>
-    <div class="timer-wrap"><div class="timer-bar" id="timer-bar"></div></div>
+    <div class="combo-badge" id="combo-badge">COMBO ×2</div>
+    <div class="scene-timer-wrap"><div class="timer-bar" id="timer-bar"></div></div>
   </div>
 
   <!-- Score + player HP -->
@@ -599,6 +667,326 @@ const ALL_NAMES = {
   natural:     ['C','D','E','F','G','A','B'],
   accidental:  ['F♯','C♯','G♯','B♭','E♭','A♭'],
 };
+
+// ════════════════════════════════════════════════════════════
+//  ENEMY SPRITES  (indexed 0–11 matching WAVES)
+// ════════════════════════════════════════════════════════════
+const SPRITES = [
+/* 0 Note Goblin */
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+<ellipse cx="50" cy="136" rx="26" ry="4" fill="rgba(0,0,0,.35)"/>
+<rect x="34" y="90" width="32" height="30" rx="10" fill="#22c55e"/>
+<circle cx="50" cy="64" r="26" fill="#4ade80"/>
+<polygon points="25,56 16,34 38,50" fill="#4ade80"/>
+<polygon points="75,56 84,34 62,50" fill="#4ade80"/>
+<polygon points="26,54 20,40 36,48" fill="#fda4af"/>
+<polygon points="74,54 80,40 64,48" fill="#fda4af"/>
+<ellipse cx="41" cy="60" rx="8" ry="9" fill="#fef08a"/>
+<ellipse cx="59" cy="60" rx="8" ry="9" fill="#fef08a"/>
+<circle cx="42" cy="61" r="5" fill="#000"/>
+<circle cx="59" cy="61" r="5" fill="#000"/>
+<circle cx="40" cy="59" r="2" fill="#fff"/>
+<circle cx="57" cy="59" r="2" fill="#fff"/>
+<ellipse cx="50" cy="75" rx="5" ry="3" fill="#16a34a"/>
+<rect x="44" y="80" width="4" height="7" rx="2" fill="#fff"/>
+<rect x="52" y="80" width="4" height="7" rx="2" fill="#fff"/>
+<rect x="14" y="92" width="16" height="22" rx="8" fill="#4ade80"/>
+<rect x="70" y="92" width="16" height="22" rx="8" fill="#4ade80"/>
+<rect x="36" y="118" width="12" height="18" rx="6" fill="#22c55e"/>
+<rect x="52" y="118" width="12" height="18" rx="6" fill="#22c55e"/>
+<circle cx="18" cy="116" r="6" fill="#1a1a2e"/>
+<rect x="24" y="96" width="3" height="20" fill="#1a1a2e"/>
+<rect x="24" y="96" width="10" height="3" fill="#1a1a2e"/>
+</svg>`,
+
+/* 1 Goblin Brute */
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+<ellipse cx="50" cy="136" rx="30" ry="4" fill="rgba(0,0,0,.4)"/>
+<rect x="28" y="86" width="44" height="36" rx="11" fill="#16a34a"/>
+<circle cx="50" cy="60" r="30" fill="#22c55e"/>
+<polygon points="22,50 12,26 36,44" fill="#22c55e"/>
+<polygon points="78,50 88,26 64,44" fill="#22c55e"/>
+<polygon points="23,48 17,32 35,42" fill="#86efac"/>
+<polygon points="77,48 83,32 65,42" fill="#86efac"/>
+<rect x="26" y="46" width="48" height="8" rx="4" fill="#14532d"/>
+<ellipse cx="40" cy="58" rx="9" ry="10" fill="#ef4444"/>
+<ellipse cx="60" cy="58" rx="9" ry="10" fill="#ef4444"/>
+<circle cx="40" cy="59" r="5.5" fill="#7f1d1d"/>
+<circle cx="60" cy="59" r="5.5" fill="#7f1d1d"/>
+<circle cx="38" cy="57" r="2" fill="#fca5a5"/>
+<circle cx="58" cy="57" r="2" fill="#fca5a5"/>
+<ellipse cx="50" cy="76" rx="6" ry="4" fill="#14532d"/>
+<rect x="44" y="81" width="5" height="9" rx="2" fill="#e5e7eb"/>
+<rect x="51" y="81" width="5" height="9" rx="2" fill="#e5e7eb"/>
+<rect x="10" y="88" width="16" height="28" rx="8" fill="#22c55e"/>
+<rect x="74" y="88" width="16" height="28" rx="8" fill="#22c55e"/>
+<rect x="30" y="120" width="16" height="16" rx="6" fill="#16a34a"/>
+<rect x="54" y="120" width="16" height="16" rx="6" fill="#16a34a"/>
+<rect x="8" y="98" width="9" height="32" rx="4" fill="#92400e"/>
+<ellipse cx="12" cy="99" rx="10" ry="8" fill="#b45309"/>
+<circle cx="6" cy="94" r="4" fill="#d97706"/>
+<circle cx="18" cy="93" r="3" fill="#d97706"/>
+</svg>`,
+
+/* 2 Clef Bandit */
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+<ellipse cx="50" cy="136" rx="26" ry="4" fill="rgba(0,0,0,.35)"/>
+<polygon points="22,82 50,76 78,82 72,136 28,136" fill="#7c2d12"/>
+<rect x="34" y="80" width="32" height="34" rx="8" fill="#ea580c"/>
+<ellipse cx="50" cy="94" rx="10" ry="12" fill="#fde8d0"/>
+<circle cx="50" cy="60" r="26" fill="#f97316"/>
+<polygon points="30,48 20,20 44,42" fill="#f97316"/>
+<polygon points="70,48 80,20 56,42" fill="#f97316"/>
+<polygon points="31,46 24,28 42,40" fill="#fda4af"/>
+<polygon points="69,46 76,28 58,40" fill="#fda4af"/>
+<ellipse cx="50" cy="66" rx="14" ry="12" fill="#fde8d0"/>
+<ellipse cx="43" cy="56" rx="7" ry="7" fill="#fff"/>
+<ellipse cx="57" cy="56" rx="7" ry="7" fill="#fff"/>
+<circle cx="44" cy="57" r="4" fill="#000"/>
+<circle cx="57" cy="57" r="4" fill="#000"/>
+<circle cx="43" cy="55" r="1.5" fill="#fff"/>
+<circle cx="56" cy="55" r="1.5" fill="#fff"/>
+<ellipse cx="50" cy="70" rx="9" ry="6" fill="#fde8d0"/>
+<ellipse cx="50" cy="68" rx="4" ry="3" fill="#f87171"/>
+<rect x="36" y="112" width="12" height="18" rx="6" fill="#ea580c"/>
+<rect x="52" y="112" width="12" height="18" rx="6" fill="#ea580c"/>
+<text x="71" y="112" font-size="28" font-family="serif" fill="#fef9c3" font-weight="bold">𝄞</text>
+</svg>`,
+
+/* 3 Bass Troll */
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+<ellipse cx="50" cy="136" rx="34" ry="5" fill="rgba(0,0,0,.45)"/>
+<rect x="22" y="82" width="56" height="42" rx="14" fill="#475569"/>
+<circle cx="50" cy="58" r="32" fill="#64748b"/>
+<polygon points="30,36 20,8 38,28" fill="#334155"/>
+<polygon points="70,36 80,8 62,28" fill="#334155"/>
+<rect x="22" y="40" width="56" height="10" rx="5" fill="#334155"/>
+<ellipse cx="39" cy="56" rx="10" ry="11" fill="#ef4444"/>
+<ellipse cx="61" cy="56" rx="10" ry="11" fill="#ef4444"/>
+<circle cx="40" cy="57" r="6" fill="#7f1d1d"/>
+<circle cx="61" cy="57" r="6" fill="#7f1d1d"/>
+<circle cx="38" cy="55" r="2.5" fill="#fca5a5"/>
+<circle cx="59" cy="55" r="2.5" fill="#fca5a5"/>
+<ellipse cx="50" cy="74" rx="8" ry="6" fill="#334155"/>
+<circle cx="46" cy="74" r="3" fill="#1e293b"/>
+<circle cx="54" cy="74" r="3" fill="#1e293b"/>
+<rect x="38" y="80" width="24" height="7" rx="4" fill="#1e293b"/>
+<rect x="44" y="78" width="5" height="10" rx="2" fill="#e5e7eb"/>
+<rect x="51" y="78" width="5" height="10" rx="2" fill="#e5e7eb"/>
+<rect x="4" y="84" width="20" height="36" rx="10" fill="#64748b"/>
+<rect x="76" y="84" width="20" height="36" rx="10" fill="#64748b"/>
+<ellipse cx="14" cy="122" rx="12" ry="10" fill="#475569"/>
+<ellipse cx="86" cy="122" rx="12" ry="10" fill="#475569"/>
+<rect x="28" y="120" width="18" height="16" rx="7" fill="#475569"/>
+<rect x="54" y="120" width="18" height="16" rx="7" fill="#475569"/>
+</svg>`,
+
+/* 4 Cave Ogre */
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+<ellipse cx="50" cy="136" rx="36" ry="5" fill="rgba(0,0,0,.5)"/>
+<rect x="18" y="80" width="64" height="46" rx="14" fill="#334155"/>
+<circle cx="50" cy="54" r="34" fill="#475569"/>
+<path d="M28,32 Q10,-5 20,8" stroke="#1e293b" stroke-width="8" fill="none" stroke-linecap="round"/>
+<path d="M72,32 Q90,-5 80,8" stroke="#1e293b" stroke-width="8" fill="none" stroke-linecap="round"/>
+<rect x="20" y="36" width="60" height="12" rx="6" fill="#1e293b"/>
+<ellipse cx="38" cy="54" rx="11" ry="12" fill="#dc2626"/>
+<ellipse cx="62" cy="54" rx="11" ry="12" fill="#dc2626"/>
+<circle cx="38" cy="55" r="7" fill="#7f1d1d"/>
+<circle cx="62" cy="55" r="7" fill="#7f1d1d"/>
+<circle cx="36" cy="53" r="3" fill="#fca5a5"/>
+<circle cx="60" cy="53" r="3" fill="#fca5a5"/>
+<ellipse cx="50" cy="74" rx="9" ry="7" fill="#1e293b"/>
+<circle cx="45" cy="74" r="4" fill="#0f172a"/>
+<circle cx="55" cy="74" r="4" fill="#0f172a"/>
+<rect x="36" y="80" width="28" height="8" rx="4" fill="#0f172a"/>
+<rect x="42" y="78" width="6" height="12" rx="3" fill="#cbd5e1"/>
+<rect x="52" y="78" width="6" height="12" rx="3" fill="#cbd5e1"/>
+<rect x="2" y="82" width="22" height="40" rx="11" fill="#475569"/>
+<rect x="76" y="82" width="22" height="40" rx="11" fill="#475569"/>
+<ellipse cx="13" cy="124" rx="14" ry="11" fill="#334155"/>
+<ellipse cx="87" cy="124" rx="14" ry="11" fill="#334155"/>
+<polygon points="4,82 10,58 16,82" fill="#94a3b8"/>
+<rect x="28" y="118" width="20" height="18" rx="7" fill="#334155"/>
+<rect x="52" y="118" width="20" height="18" rx="7" fill="#334155"/>
+</svg>`,
+
+/* 5 Sharp Witch */
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+<ellipse cx="50" cy="136" rx="22" ry="4" fill="rgba(0,0,0,.35)"/>
+<polygon points="26,90 50,84 74,90 68,136 32,136" fill="#7c3aed"/>
+<rect x="34" y="84" width="32" height="28" rx="8" fill="#9333ea"/>
+<circle cx="50" cy="72" r="20" fill="#fde68a"/>
+<ellipse cx="50" cy="54" rx="28" ry="7" fill="#4c1d95"/>
+<polygon points="50,4 30,54 70,54" fill="#6d28d9"/>
+<rect x="24" y="50" width="52" height="8" rx="2" fill="#fbbf24"/>
+<text x="43" y="42" font-size="14" fill="#fbbf24">★</text>
+<ellipse cx="43" cy="70" rx="6" ry="7" fill="#fff"/>
+<ellipse cx="57" cy="70" rx="6" ry="7" fill="#fff"/>
+<circle cx="43" cy="71" r="4" fill="#1e1b4b"/>
+<circle cx="57" cy="71" r="4" fill="#1e1b4b"/>
+<circle cx="42" cy="70" r="1.5" fill="#fff"/>
+<circle cx="56" cy="70" r="1.5" fill="#fff"/>
+<polygon points="50,78 46,86 54,86" fill="#fbbf24"/>
+<rect x="12" y="86" width="22" height="14" rx="7" fill="#7c3aed"/>
+<rect x="66" y="86" width="22" height="14" rx="7" fill="#7c3aed"/>
+<rect x="10" y="72" width="4" height="48" fill="#4c1d95"/>
+<text x="2" y="73" font-size="18" font-weight="bold" fill="#fbbf24">♯</text>
+</svg>`,
+
+/* 6 Coven Elder */
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+<ellipse cx="50" cy="136" rx="24" ry="4" fill="rgba(0,0,0,.4)"/>
+<polygon points="22,88 50,80 78,88 70,136 30,136" fill="#4c1d95"/>
+<rect x="32" y="80" width="36" height="30" rx="8" fill="#6d28d9"/>
+<circle cx="50" cy="68" r="22" fill="#fde68a"/>
+<ellipse cx="50" cy="48" rx="34" ry="9" fill="#2e1065"/>
+<polygon points="50,-2 24,48 76,48" fill="#4c1d95"/>
+<rect x="18" y="44" width="64" height="9" rx="2" fill="#fbbf24"/>
+<text x="38" y="38" font-size="20" fill="#fef08a">☽</text>
+<ellipse cx="42" cy="66" rx="7" ry="8" fill="#fff"/>
+<ellipse cx="58" cy="66" rx="7" ry="8" fill="#fff"/>
+<circle cx="42" cy="67" r="5" fill="#1e1b4b"/>
+<circle cx="58" cy="67" r="5" fill="#1e1b4b"/>
+<circle cx="41" cy="65" r="2" fill="#a78bfa"/>
+<circle cx="57" cy="65" r="2" fill="#a78bfa"/>
+<polygon points="50,76 46,84 54,84" fill="#fbbf24"/>
+<rect x="8" y="82" width="24" height="16" rx="8" fill="#4c1d95"/>
+<rect x="68" y="82" width="24" height="16" rx="8" fill="#4c1d95"/>
+<circle cx="12" cy="96" r="8" fill="#a855f7"/>
+<circle cx="10" cy="94" r="3" fill="#e9d5ff"/>
+</svg>`,
+
+/* 7 Alto Phantom */
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+<ellipse cx="50" cy="80" rx="38" ry="55" fill="rgba(147,197,253,.08)"/>
+<path d="M18,70 Q10,50 20,30 Q30,10 50,8 Q70,10 80,30 Q90,50 82,70 Q82,100 74,110 Q66,122 60,118 Q55,115 50,118 Q45,115 40,118 Q34,122 26,110 Q18,100 18,70 Z" fill="#e2e8f0"/>
+<ellipse cx="38" cy="52" rx="9" ry="12" fill="#1e3a5f"/>
+<ellipse cx="62" cy="52" rx="9" ry="12" fill="#1e3a5f"/>
+<ellipse cx="38" cy="52" rx="5" ry="7" fill="#7dd3fc"/>
+<ellipse cx="62" cy="52" rx="5" ry="7" fill="#7dd3fc"/>
+<circle cx="38" cy="52" r="2.5" fill="#fff"/>
+<circle cx="62" cy="52" r="2.5" fill="#fff"/>
+<ellipse cx="50" cy="72" rx="8" ry="9" fill="#1e3a5f"/>
+<ellipse cx="50" cy="72" rx="5" ry="6" fill="#4299e1"/>
+<ellipse cx="26" cy="110" rx="9" ry="5" fill="rgba(226,232,240,.6)"/>
+<ellipse cx="50" cy="118" rx="9" ry="5" fill="rgba(226,232,240,.5)"/>
+<ellipse cx="74" cy="110" rx="9" ry="5" fill="rgba(226,232,240,.6)"/>
+<text x="28" y="40" font-size="18" font-family="serif" fill="#bfdbfe" opacity=".7">𝄡</text>
+</svg>`,
+
+/* 8 Dark Maestro */
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+<ellipse cx="50" cy="136" rx="22" ry="4" fill="rgba(0,0,0,.4)"/>
+<polygon points="30,90 50,84 70,90 80,136 68,136 62,112 50,118 38,112 32,136 20,136" fill="#0f172a"/>
+<rect x="40" y="86" width="20" height="28" rx="4" fill="#f1f5f9"/>
+<polygon points="44,90 50,94 44,98" fill="#ef4444"/>
+<polygon points="56,90 50,94 56,98" fill="#ef4444"/>
+<rect x="32" y="84" width="36" height="28" rx="8" fill="#1e293b"/>
+<circle cx="50" cy="68" r="22" fill="#f1f5f9"/>
+<ellipse cx="50" cy="48" rx="26" ry="6" fill="#0f172a"/>
+<rect x="32" y="10" width="36" height="40" rx="2" fill="#1e293b"/>
+<rect x="32" y="44" width="36" height="6" fill="#ef4444"/>
+<ellipse cx="42" cy="66" rx="7" ry="7" fill="#fff"/>
+<ellipse cx="58" cy="66" rx="7" ry="7" fill="#fff"/>
+<circle cx="42" cy="67" r="4" fill="#0f172a"/>
+<circle cx="58" cy="67" r="4" fill="#0f172a"/>
+<circle cx="41" cy="65" r="1.5" fill="#fff"/>
+<circle cx="57" cy="65" r="1.5" fill="#fff"/>
+<path d="M42,78 Q50,74 58,78" stroke="#0f172a" stroke-width="2" fill="none"/>
+<rect x="70" y="62" width="3" height="44" rx="1" fill="#f8fafc" transform="rotate(30,72,84)"/>
+<circle cx="82" cy="62" r="3" fill="#fbbf24"/>
+</svg>`,
+
+/* 9 Grand Maestro */
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+<ellipse cx="50" cy="136" rx="24" ry="4" fill="rgba(0,0,0,.45)"/>
+<polygon points="26,86 50,78 74,86 84,136 66,136 60,108 50,114 40,108 34,136 16,136" fill="#1e293b"/>
+<polygon points="34,136 40,108 50,114 60,108 66,136" fill="#fbbf24" opacity=".25"/>
+<rect x="30" y="78" width="40" height="32" rx="8" fill="#0f172a"/>
+<rect x="30" y="78" width="4" height="32" fill="#fbbf24" opacity=".5"/>
+<rect x="66" y="78" width="4" height="32" fill="#fbbf24" opacity=".5"/>
+<circle cx="38" cy="88" r="4" fill="#fbbf24"/>
+<circle cx="38" cy="98" r="4" fill="#c0c0c0"/>
+<rect x="42" y="80" width="16" height="26" rx="3" fill="#f1f5f9"/>
+<circle cx="50" cy="60" r="24" fill="#f1f5f9"/>
+<ellipse cx="50" cy="38" rx="28" ry="7" fill="#0f172a"/>
+<rect x="30" y="0" width="40" height="40" rx="2" fill="#1e293b"/>
+<rect x="30" y="33" width="40" height="7" fill="#fbbf24"/>
+<ellipse cx="42" cy="58" rx="7" ry="8" fill="#fff"/>
+<ellipse cx="58" cy="58" rx="7" ry="8" fill="#fff"/>
+<circle cx="43" cy="59" r="4.5" fill="#0f172a"/>
+<circle cx="58" cy="59" r="4.5" fill="#0f172a"/>
+<circle cx="42" cy="57" r="2" fill="#fbbf24"/>
+<circle cx="57" cy="57" r="2" fill="#fbbf24"/>
+<path d="M43,70 Q50,66 57,70" stroke="#0f172a" stroke-width="2.5" fill="none"/>
+<rect x="72" y="56" width="4" height="46" rx="2" fill="#f8fafc" transform="rotate(25,74,80)"/>
+<circle cx="84" cy="56" r="5" fill="#fbbf24"/>
+<circle cx="84" cy="56" r="2" fill="#fff"/>
+</svg>`,
+
+/* 10 Shadow Dragon */
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+<ellipse cx="50" cy="136" rx="30" ry="5" fill="rgba(0,0,0,.5)"/>
+<path d="M32,72 Q4,40 10,16 Q22,36 30,60 Z" fill="#312e81"/>
+<path d="M32,72 Q2,60 6,40 Q18,58 30,66 Z" fill="#3730a3"/>
+<path d="M68,72 Q96,40 90,16 Q78,36 70,60 Z" fill="#312e81"/>
+<path d="M68,72 Q98,60 94,40 Q82,58 70,66 Z" fill="#3730a3"/>
+<path d="M58,110 Q70,120 78,136" stroke="#1e1b4b" stroke-width="10" fill="none" stroke-linecap="round"/>
+<polygon points="76,130 84,138 70,138" fill="#312e81"/>
+<ellipse cx="50" cy="96" rx="22" ry="28" fill="#3730a3"/>
+<ellipse cx="50" cy="84" rx="16" ry="8" fill="#4338ca"/>
+<ellipse cx="50" cy="76" rx="12" ry="6" fill="#4f46e5"/>
+<rect x="40" y="60" width="20" height="22" rx="8" fill="#3730a3"/>
+<ellipse cx="50" cy="52" rx="20" ry="18" fill="#4338ca"/>
+<ellipse cx="50" cy="62" rx="12" ry="8" fill="#3730a3"/>
+<circle cx="45" cy="62" r="3" fill="#f43f5e"/>
+<circle cx="55" cy="62" r="3" fill="#f43f5e"/>
+<ellipse cx="40" cy="48" rx="8" ry="8" fill="#f97316"/>
+<ellipse cx="60" cy="48" rx="8" ry="8" fill="#f97316"/>
+<circle cx="40" cy="48" r="4" fill="#7c2d12"/>
+<circle cx="60" cy="48" r="4" fill="#7c2d12"/>
+<circle cx="39" cy="46" r="2" fill="#fed7aa"/>
+<circle cx="59" cy="46" r="2" fill="#fed7aa"/>
+<polygon points="36,38 28,14 42,34" fill="#1e1b4b"/>
+<polygon points="64,38 72,14 58,34" fill="#1e1b4b"/>
+</svg>`,
+
+/* 11 DRAGON KING */
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+<ellipse cx="50" cy="136" rx="34" ry="6" fill="rgba(0,0,0,.55)"/>
+<path d="M28,68 Q-4,30 4,4 Q18,28 26,56 Z" fill="#7f1d1d"/>
+<path d="M28,68 Q-6,52 0,28 Q16,50 26,62 Z" fill="#991b1b"/>
+<path d="M72,68 Q104,30 96,4 Q82,28 74,56 Z" fill="#7f1d1d"/>
+<path d="M72,68 Q106,52 100,28 Q84,50 74,62 Z" fill="#991b1b"/>
+<path d="M28,68 Q-4,30 4,4" stroke="#fbbf24" stroke-width="2" fill="none" opacity=".6"/>
+<path d="M72,68 Q104,30 96,4" stroke="#fbbf24" stroke-width="2" fill="none" opacity=".6"/>
+<path d="M62,114 Q76,122 82,138" stroke="#7f1d1d" stroke-width="12" fill="none" stroke-linecap="round"/>
+<polygon points="80,132 90,140 72,140" fill="#dc2626"/>
+<ellipse cx="50" cy="94" rx="26" ry="32" fill="#dc2626"/>
+<ellipse cx="50" cy="92" rx="16" ry="22" fill="#fbbf24" opacity=".2"/>
+<ellipse cx="50" cy="80" rx="18" ry="10" fill="#b91c1c"/>
+<rect x="38" y="56" width="24" height="24" rx="10" fill="#b91c1c"/>
+<ellipse cx="50" cy="46" rx="26" ry="22" fill="#dc2626"/>
+<rect x="24" y="26" width="52" height="12" rx="2" fill="#fbbf24"/>
+<polygon points="24,26 30,10 36,26" fill="#fbbf24"/>
+<polygon points="44,26 50,8 56,26" fill="#fbbf24"/>
+<polygon points="64,26 70,10 76,26" fill="#fbbf24"/>
+<circle cx="50" cy="18" r="4" fill="#ef4444"/>
+<circle cx="30" cy="24" r="2" fill="#ef4444"/>
+<circle cx="70" cy="24" r="2" fill="#ef4444"/>
+<ellipse cx="50" cy="58" rx="14" ry="10" fill="#b91c1c"/>
+<ellipse cx="50" cy="66" rx="8" ry="5" fill="#f97316"/>
+<polygon points="38,68 50,82 62,68 56,74 50,70 44,74" fill="#fbbf24"/>
+<ellipse cx="38" cy="42" rx="10" ry="10" fill="#fbbf24"/>
+<ellipse cx="62" cy="42" rx="10" ry="10" fill="#fbbf24"/>
+<circle cx="38" cy="42" r="5" fill="#dc2626"/>
+<circle cx="62" cy="42" r="5" fill="#dc2626"/>
+<circle cx="36" cy="40" r="2.5" fill="#fff"/>
+<circle cx="60" cy="40" r="2.5" fill="#fff"/>
+<polygon points="32,30 18,2 40,26" fill="#fbbf24"/>
+<polygon points="68,30 82,2 60,26" fill="#fbbf24"/>
+</svg>`,
+];
 
 // ════════════════════════════════════════════════════════════
 //  WAVE CONFIG
@@ -847,7 +1235,7 @@ function handleCorrect(cardEl) {
   replaceCard(gs.currentNote.name);
 
   showFeedback(`+${pts}`, 'correct');
-  spawnFloater(`-${dmg}`, 'hit', document.getElementById('enemy-emoji'));
+  spawnFloater(`-${dmg}`, 'hit', document.getElementById('enemy-sprite'));
   animateEnemyHit();
   updateUI();
 
@@ -884,7 +1272,7 @@ function handleTimeout() {
 }
 
 function animateEnemyHit() {
-  const el = document.getElementById('enemy-emoji');
+  const el = document.getElementById('enemy-sprite');
   el.classList.remove('enemy-hit');
   void el.offsetWidth;
   el.classList.add('enemy-hit');
@@ -942,8 +1330,8 @@ function startWave() {
   gs.enemyMaxHp = wave.hp;
   gs.timerLimit = wave.time;
 
-  document.getElementById('enemy-emoji').textContent = wave.emoji;
-  document.getElementById('enemy-emoji').className   = 'enemy-emoji' + (wave.isBoss ? ' boss-glow' : '');
+  document.getElementById('enemy-sprite').innerHTML  = SPRITES[gs.wave];
+  document.getElementById('enemy-sprite').className  = 'enemy-sprite' + (wave.isBoss ? ' boss-glow' : '');
   document.getElementById('enemy-name').textContent  = wave.isBoss ? `⚡ ${wave.name}` : wave.name;
   document.getElementById('enemy-hp-max').textContent = wave.hp;
 
