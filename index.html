@@ -90,10 +90,13 @@
       display: flex; align-items: center; gap: .75rem; margin-bottom: .5rem;
     }
     .enemy-emoji {
-      font-size: 2.2rem; line-height: 1;
-      transition: transform .15s;
+      font-size: 5rem; line-height: 1;
+      width: 88px; text-align: center; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,.5));
     }
-    .enemy-emoji.shake { animation: shake .3s ease; }
+    .enemy-emoji.enemy-hit  { animation: enemyHit  .5s ease forwards; }
+    .enemy-emoji.player-atk { animation: playerAtk .4s ease forwards; }
     .enemy-info { flex: 1; }
     .enemy-name { font-size: .82rem; font-weight: 700; color: var(--text-dim); }
     .enemy-hp-text { font-size: .72rem; color: var(--text-dim); margin-top: 1px; }
@@ -260,9 +263,31 @@
 
     /* Boss glow */
     .boss-glow { text-shadow: 0 0 20px #f43f5e, 0 0 40px #f43f5e; }
+
+    /* ── Hit animations ── */
+    @keyframes enemyHit {
+      0%   { transform: scale(1)    translateX(0);   filter: drop-shadow(0 4px 8px rgba(0,0,0,.5)) brightness(1); }
+      15%  { transform: scale(1.2)  translateX(6px); filter: drop-shadow(0 4px 8px rgba(0,0,0,.5)) brightness(3) saturate(0); }
+      40%  { transform: scale(.85)  translateX(-8px);filter: drop-shadow(0 4px 8px rgba(0,0,0,.5)) brightness(1.8) sepia(1) saturate(4) hue-rotate(-20deg); }
+      70%  { transform: scale(1.05) translateX(4px); filter: drop-shadow(0 4px 8px rgba(0,0,0,.5)) brightness(1); }
+      100% { transform: scale(1)    translateX(0);   filter: drop-shadow(0 4px 8px rgba(0,0,0,.5)) brightness(1); }
+    }
+    @keyframes screenFlash {
+      0%   { opacity: .55; }
+      100% { opacity: 0; }
+    }
+    #screen-flash {
+      position: fixed; inset: 0; z-index: 9999;
+      background: #f43f5e;
+      pointer-events: none;
+      opacity: 0;
+    }
+    #screen-flash.active { animation: screenFlash .5s ease forwards; }
   </style>
 </head>
 <body>
+
+<div id="screen-flash"></div>
 
 <!-- ═══ MENU ═══ -->
 <div id="screen-menu" class="screen active">
@@ -627,6 +652,7 @@ function handleCorrect(cardEl) {
 
   showFeedback(`+${pts}`, 'correct');
   spawnFloater(`-${dmg}`, 'hit', document.getElementById('enemy-emoji'));
+  animateEnemyHit();
   updateUI();
 
   const wave = WAVES[gs.wave];
@@ -660,11 +686,28 @@ function handleTimeout() {
   setTimeout(() => newQuestion(), 800);
 }
 
+function animateEnemyHit() {
+  const el = document.getElementById('enemy-emoji');
+  el.classList.remove('enemy-hit');
+  void el.offsetWidth;
+  el.classList.add('enemy-hit');
+  el.addEventListener('animationend', () => el.classList.remove('enemy-hit'), { once: true });
+}
+
+function animatePlayerHit() {
+  const el = document.getElementById('screen-flash');
+  el.classList.remove('active');
+  void el.offsetWidth;
+  el.classList.add('active');
+  el.addEventListener('animationend', () => el.classList.remove('active'), { once: true });
+}
+
 function applyEnemyAttack() {
   const wave = WAVES[gs.wave];
   gs.playerHp = Math.max(0, gs.playerHp - wave.atk);
   document.getElementById('player-hp-bar').classList.add('danger');
   spawnFloater(`-${wave.atk}`, 'dmg', document.getElementById('player-hp-text'));
+  animatePlayerHit();
   setTimeout(() => document.getElementById('player-hp-bar').classList.remove('danger'), 500);
 
   if (gs.playerHp <= 0) {
@@ -739,11 +782,6 @@ function updateUI() {
     badge.classList.remove('visible');
   }
 
-  // Shake emoji on hit
-  const emojiEl = document.getElementById('enemy-emoji');
-  emojiEl.classList.remove('shake');
-  void emojiEl.offsetWidth;
-  if (gs.enemyHp < gs.enemyMaxHp) emojiEl.classList.add('shake');
 }
 
 function showFeedback(msg, type) {
