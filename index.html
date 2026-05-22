@@ -519,6 +519,11 @@
       filter: drop-shadow(0 8px 18px rgba(0,0,0,.65));
       z-index: 1;
     }
+    /* final boss is dramatically larger */
+    .enemy-sprite.boss-size {
+      width: 162px; height: 227px;
+      right: 1%; bottom: 6%;
+    }
 
     /* ── player sprite (left side, slightly smaller) ── */
     .player-sprite {
@@ -1534,7 +1539,7 @@ function startWave() {
   gs.timerLimit = wave.time;
 
   document.getElementById('enemy-sprite').innerHTML  = SPRITES[gs.wave];
-  document.getElementById('enemy-sprite').className  = 'enemy-sprite' + (wave.isBoss ? ' boss-glow' : '');
+  document.getElementById('enemy-sprite').className  = 'enemy-sprite' + (wave.isBoss ? ' boss-glow boss-size' : '');
   document.getElementById('enemy-name').textContent  = wave.isBoss ? `⚡ ${wave.name}` : wave.name;
   document.getElementById('enemy-hp-max').textContent = wave.hp;
 
@@ -1599,7 +1604,60 @@ function spawnFloater(text, type, anchor) {
 // ════════════════════════════════════════════════════════════
 //  GAME START / OVER / VICTORY
 // ════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
+//  MUSIC SYSTEM
+// ════════════════════════════════════════════════════════════
+// Place MP3 files in a  music/  folder next to index.html.
+// Each track should loop seamlessly; 128–192 kbps stereo is fine.
+const MUSIC_TRACKS = {
+  menu:    'music/menu.mp3',      // menu, game-over, victory
+  forest:  'music/early.mp3',     // acts 1–2
+  town:    'music/early.mp3',
+  cave:    'music/midgame.mp3',   // acts 3–4
+  darkwood:'music/midgame.mp3',
+  ruins:   'music/dungeon.mp3',   // acts 5–6
+  castle:  'music/dungeon.mp3',
+  lair:    'music/boss.mp3',      // act 7 + Dragon King
+};
+const MUSIC_VOL = 0.45;
+let _mus = null;         // current Audio element
+let _musSrc = '';        // currently playing src
+
+function playMusic(key) {
+  const src = MUSIC_TRACKS[key] || '';
+  if (!src || src === _musSrc) return;
+  _musSrc = src;
+
+  // fade out the old track
+  if (_mus) {
+    const old = _mus;
+    (function fade() {
+      old.volume = Math.max(0, old.volume - 0.05);
+      if (old.volume > 0) requestAnimationFrame(fade);
+      else { old.pause(); old.src = ''; }
+    })();
+  }
+
+  // start the new track, fade in
+  const a = new Audio(src);
+  a.loop = true;
+  a.volume = 0;
+  _mus = a;
+  a.play().catch(() => {}); // silently ignore autoplay block
+  a.addEventListener('playing', function fadeIn() {
+    if (a !== _mus) return; // superseded
+    a.volume = Math.min(MUSIC_VOL, a.volume + 0.025);
+    if (a.volume < MUSIC_VOL) requestAnimationFrame(fadeIn);
+  }, { once: true });
+}
+
+function stopMusic() {
+  if (_mus) { _mus.pause(); _mus.src = ''; _mus = null; }
+  _musSrc = '';
+}
+
 function setEnvironment(env) {
+  playMusic(env);
   const bg = document.getElementById('game-bg');
   bg.style.opacity = '0';
   setTimeout(() => { bg.className = `env-${env}`; bg.style.opacity = '1'; }, 450);
@@ -1633,6 +1691,7 @@ function beginQuest() {
 function gameOver() {
   stopTimer();
   gs.running = false;
+  playMusic('menu');
   document.getElementById('go-score').textContent = gs.score.toLocaleString();
   document.getElementById('go-summary').textContent =
     `Reached Wave ${gs.wave + 1}: ${WAVES[gs.wave].name}`;
@@ -1642,6 +1701,7 @@ function gameOver() {
 function victory() {
   stopTimer();
   gs.running = false;
+  playMusic('menu');
   const bonus = 5000;
   gs.score += bonus;
   document.getElementById('vic-score').textContent = gs.score.toLocaleString();
@@ -1708,6 +1768,7 @@ function showMenu() {
   gs.running = false;
   renderLB('lb-menu');
   showScreen('menu');
+  playMusic('menu');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1719,6 +1780,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('preview-m').innerHTML = PLAYER_SPRITES.m;
   document.getElementById('preview-f').innerHTML = PLAYER_SPRITES.f;
 });
+
+// Music starts on first user interaction (browser autoplay policy)
+document.addEventListener('pointerdown', () => {
+  if (_musSrc === '' && document.getElementById('screen-menu').classList.contains('active')) {
+    playMusic('menu');
+  }
+}, { once: true });
 </script>
 </body>
 </html>
