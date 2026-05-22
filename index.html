@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>Note Quest ⚔️</title>
+  <script src="https://cdn.jsdelivr.net/npm/vexflow@5.0.0/build/cjs/vexflow.js"></script>
+  <style>
+    :root {
+      --bg:       #1a1a2e;
+      --bg2:      #16213e;
+      --surface:  #0f3460;
+      --card-bg:  #faf8f0;
+      --card-sh:  rgba(0,0,0,.4);
+      --accent:   #e94560;
+      --gold:     #ffd700;
+      --green:    #4ade80;
+      --red:      #f87171;
+      --text:     #f0f0f0;
+      --text-dim: #9ca3af;
+      --r: 10px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100%;
+      display: flex; flex-direction: column;
+      -webkit-text-size-adjust: 100%;
+      user-select: none;
+    }
+
+    /* ── Screens ── */
+    .screen { display: none; flex: 1; flex-direction: column; }
+    .screen.active { display: flex; }
+
+    /* ════════════ MENU ════════════ */
+    #screen-menu {
+      align-items: center;
+      padding: 2rem 1.25rem 1.5rem;
+      gap: 1.25rem;
+    }
+    .logo { font-size: 3rem; text-align: center; }
+    .game-title {
+      font-size: 2.2rem; font-weight: 900;
+      background: linear-gradient(135deg, var(--gold), var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      letter-spacing: -.02em; text-align: center;
+    }
+    .game-sub { font-size: .88rem; color: var(--text-dim); text-align: center; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: .5rem; padding: .75rem 2rem; border: none; border-radius: var(--r);
+      font-size: 1rem; font-weight: 700; cursor: pointer; min-height: 48px;
+      transition: transform .1s, opacity .1s;
+    }
+    .btn:active { transform: scale(.96); opacity: .85; }
+    .btn-primary { background: var(--accent); color: #fff; width: 100%; font-size: 1.1rem; }
+    .btn-ghost   { background: rgba(255,255,255,.08); color: var(--text); border: 1px solid rgba(255,255,255,.15); }
+    .btn-gold    { background: var(--gold); color: #1a1a2e; }
+
+    /* Leaderboard */
+    .lb-title { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim); align-self: flex-start; width: 100%; }
+    .lb-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    .lb-table th { color: var(--text-dim); font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; padding: .35rem .5rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .lb-table td { padding: .45rem .5rem; border-bottom: 1px solid rgba(255,255,255,.05); }
+    .lb-table tr:first-child td { color: var(--gold); font-weight: 700; }
+    .lb-table tr:nth-child(2) td { color: #c0c0c0; }
+    .lb-table tr:nth-child(3) td { color: #cd7f32; }
+    .lb-rank { color: var(--text-dim); font-size: .8rem; width: 24px; }
+    .lb-score { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .lb-empty { color: var(--text-dim); font-size: .85rem; text-align: center; padding: 1rem; }
+
+    /* ════════════ GAME ════════════ */
+    #screen-game { padding: 0; gap: 0; overflow: hidden; }
+
+    /* Enemy zone */
+    .enemy-zone {
+      background: var(--bg2);
+      padding: .75rem 1rem .6rem;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .enemy-row {
+      display: flex; align-items: center; gap: .75rem; margin-bottom: .5rem;
+    }
+    .enemy-emoji {
+      font-size: 2.2rem; line-height: 1;
+      transition: transform .15s;
+    }
+    .enemy-emoji.shake { animation: shake .3s ease; }
+    .enemy-info { flex: 1; }
+    .enemy-name { font-size: .82rem; font-weight: 700; color: var(--text-dim); }
+    .enemy-hp-text { font-size: .72rem; color: var(--text-dim); margin-top: 1px; }
+    .combo-badge {
+      font-size: .72rem; font-weight: 800; color: var(--gold);
+      background: rgba(255,215,0,.12); border: 1px solid rgba(255,215,0,.3);
+      border-radius: 20px; padding: .2rem .6rem;
+      display: none;
+    }
+    .combo-badge.visible { display: block; }
+
+    /* HP bars */
+    .hp-bar-wrap { height: 10px; background: rgba(255,255,255,.08); border-radius: 5px; overflow: hidden; margin-top: 4px; }
+    .hp-bar { height: 100%; border-radius: 5px; transition: width .3s ease; }
+    .hp-enemy { background: linear-gradient(90deg, #f43f5e, #fb923c); }
+    .hp-player { background: linear-gradient(90deg, #4ade80, #22d3ee); }
+    .hp-bar.danger { background: var(--red) !important; }
+
+    /* Timer */
+    .timer-wrap { height: 5px; background: rgba(255,255,255,.06); border-radius: 3px; overflow: hidden; margin-top: .4rem; }
+    .timer-bar {
+      height: 100%; border-radius: 3px;
+      background: var(--gold);
+      transition: width linear, background .3s;
+    }
+    .timer-bar.urgent { background: var(--red); }
+
+    /* Score row */
+    .score-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: .4rem 1rem;
+      background: rgba(0,0,0,.25);
+      font-size: .78rem;
+    }
+    .score-label { color: var(--text-dim); }
+    .score-val { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--gold); }
+    .player-hp-zone { display: flex; align-items: center; gap: .5rem; }
+    .player-hp-bar-wrap { width: 80px; }
+
+    /* Staff zone */
+    .staff-zone {
+      flex: 1;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: .5rem 1rem;
+      min-height: 0;
+    }
+    .clef-label {
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--text-dim); margin-bottom: .25rem;
+    }
+    .staff-container {
+      width: 100%;
+      background: white; border-radius: var(--r);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .staff-container svg { display: block; }
+
+    /* Feedback flash */
+    .feedback {
+      font-size: 1.6rem; font-weight: 900; text-align: center;
+      min-height: 2rem; letter-spacing: .05em;
+      transition: opacity .2s;
+    }
+    .feedback.correct { color: var(--green); }
+    .feedback.wrong   { color: var(--red);   }
+
+    /* Hand */
+    .hand-zone {
+      padding: .6rem 1rem .75rem;
+      background: var(--bg2);
+      border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .hand-label { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim); margin-bottom: .5rem; }
+    .hand {
+      display: flex; gap: 8px;
+      justify-content: center;
+    }
+
+    /* Cards */
+    .card {
+      width: 62px; height: 86px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px var(--card-sh);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s;
+      position: relative;
+      border: 2px solid transparent;
+      color: #1a1a2e;
+      gap: 2px;
+    }
+    .card:active { transform: translateY(-4px) scale(1.04); box-shadow: 0 8px 20px var(--card-sh); }
+    .card:hover  { transform: translateY(-6px); box-shadow: 0 10px 22px var(--card-sh); }
+    .card.played {
+      animation: cardPlay .25s ease forwards;
+      pointer-events: none;
+    }
+    .card.wrong-flash { animation: wrongFlash .3s ease; }
+    .card-name {
+      font-size: 1.35rem; font-weight: 900; line-height: 1;
+      color: #1a1a2e;
+    }
+    .card-name.sharp   { color: #2563eb; }
+    .card-name.flat    { color: #7c3aed; }
+    .card-suit { font-size: .95rem; opacity: .4; }
+    .card-corner {
+      position: absolute; top: 4px; left: 6px;
+      font-size: .55rem; font-weight: 700; color: #555; line-height: 1;
+    }
+
+    /* ════════════ DAMAGE FLOATERS ════════════ */
+    .floater {
+      position: fixed; font-size: 1.4rem; font-weight: 900;
+      pointer-events: none; z-index: 999;
+      animation: float 0.9s ease forwards;
+    }
+    .floater.hit   { color: var(--green); }
+    .floater.dmg   { color: var(--red);   }
+    .floater.miss  { color: #fb923c;      }
+
+    /* ════════════ GAME OVER / VICTORY ════════════ */
+    #screen-gameover, #screen-victory {
+      align-items: center; justify-content: center;
+      padding: 2rem 1.5rem; gap: 1rem; text-align: center;
+    }
+    .end-icon { font-size: 4rem; }
+    .end-title { font-size: 2rem; font-weight: 900; }
+    .end-score { font-size: 2.8rem; font-weight: 900; color: var(--gold); }
+    .end-sub { font-size: .9rem; color: var(--text-dim); }
+    .name-input {
+      width: 100%; padding: .7rem 1rem; border: 2px solid rgba(255,255,255,.15);
+      border-radius: var(--r); background: rgba(255,255,255,.06); color: var(--text);
+      font-size: 1rem; text-align: center; outline: none;
+    }
+    .name-input:focus { border-color: var(--gold); }
+    .wave-summary { font-size: .85rem; color: var(--text-dim); }
+
+    /* ── Animations ── */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-6px); }
+      75%      { transform: translateX(6px); }
+    }
+    @keyframes cardPlay {
+      0%   { transform: translateY(0) scale(1); opacity: 1; }
+      60%  { transform: translateY(-30px) scale(1.1); opacity: .8; }
+      100% { transform: translateY(-60px) scale(.8); opacity: 0; }
+    }
+    @keyframes wrongFlash {
+      0%,100% { background: var(--card-bg); }
+      40%     { background: #fecaca; }
+    }
+    @keyframes float {
+      0%   { transform: translateY(0);    opacity: 1; }
+      100% { transform: translateY(-60px); opacity: 0; }
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%     { opacity: .5; }
+    }
+    .pulsing { animation: pulse 1s ease infinite; }
+
+    /* Boss glow */
+    .boss-glow { text-shadow: 0 0 20px #f43f5e, 0 0 40px #f43f5e; }
+  </style>
+</head>
+<body>
+
+<!-- ═══ MENU ═══ -->
+<div id="screen-menu" class="screen active">
+  <div class="logo">⚔️🎵</div>
+  <div>
+    <div class="game-title">Note Quest</div>
+    <div class="game-sub">Battle enemies by reading music!</div>
+  </div>
+  <button class="btn btn-primary" onclick="startGame()">▶ Start Game</button>
+  <div class="lb-title">🏆 Leaderboard</div>
+  <div id="lb-menu" style="width:100%"></div>
+</div>
+
+<!-- ═══ GAME ═══ -->
+<div id="screen-game" class="screen">
+  <!-- Enemy zone -->
+  <div class="enemy-zone">
+    <div class="enemy-row">
+      <div class="enemy-emoji" id="enemy-emoji">👺</div>
+      <div class="enemy-info">
+        <div class="enemy-name" id="enemy-name">Note Goblin</div>
+        <div class="enemy-hp-text"><span id="enemy-hp-cur">40</span> / <span id="enemy-hp-max">40</span> HP</div>
+        <div class="hp-bar-wrap"><div class="hp-bar hp-enemy" id="enemy-hp-bar" style="width:100%"></div></div>
+      </div>
+      <div class="combo-badge" id="combo-badge">COMBO ×2</div>
+    </div>
+    <div class="timer-wrap"><div class="timer-bar" id="timer-bar"></div></div>
+  </div>
+
+  <!-- Score + player HP -->
+  <div class="score-row">
+    <div><span class="score-label">Score </span><span class="score-val" id="score-display">0</span></div>
+    <div class="player-hp-zone">
+      <span class="score-label" id="player-hp-text">❤️ 100</span>
+      <div class="player-hp-bar-wrap hp-bar-wrap">
+        <div class="hp-bar hp-player" id="player-hp-bar" style="width:100%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Staff -->
+  <div class="staff-zone">
+    <div class="clef-label" id="clef-label">Treble Clef</div>
+    <div class="staff-container" id="staff-container"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <!-- Hand -->
+  <div class="hand-zone">
+    <div class="hand-label">Your hand — play the matching card</div>
+    <div class="hand" id="hand"></div>
+  </div>
+</div>
+
+<!-- ═══ GAME OVER ═══ -->
+<div id="screen-gameover" class="screen">
+  <div class="end-icon">💀</div>
+  <div class="end-title">Defeated!</div>
+  <div class="end-score" id="go-score">0</div>
+  <div class="wave-summary" id="go-summary"></div>
+  <input class="name-input" id="go-name" placeholder="Enter your name" maxlength="20">
+  <button class="btn btn-primary" onclick="submitScore(false)">Save Score</button>
+  <button class="btn btn-ghost" onclick="showMenu()">Menu</button>
+</div>
+
+<!-- ═══ VICTORY ═══ -->
+<div id="screen-victory" class="screen">
+  <div class="end-icon">🐉✨</div>
+  <div class="end-title" style="color:var(--gold)">Victory!</div>
+  <div class="end-score" id="vic-score">0</div>
+  <div class="wave-summary" id="vic-summary"></div>
+  <input class="name-input" id="vic-name" placeholder="Enter your name" maxlength="20">
+  <button class="btn btn-gold" onclick="submitScore(true)">🏆 Submit Score</button>
+  <button class="btn btn-ghost" onclick="showMenu()">Menu</button>
+</div>
+
+<script>
+'use strict';
+const VF = VexFlow;
+
+// ════════════════════════════════════════════════════════════
+//  NOTE DATABASE
+// ════════════════════════════════════════════════════════════
+const NOTE_POOL = {
+  treble: {
+    natural: [
+      { name:'C', key:'c/4', acc:null },
+      { name:'D', key:'d/4', acc:null },
+      { name:'E', key:'e/4', acc:null },
+      { name:'F', key:'f/4', acc:null },
+      { name:'G', key:'g/4', acc:null },
+      { name:'A', key:'a/4', acc:null },
+      { name:'B', key:'b/4', acc:null },
+      { name:'C', key:'c/5', acc:null },
+      { name:'D', key:'d/5', acc:null },
+      { name:'E', key:'e/5', acc:null },
+      { name:'F', key:'f/5', acc:null },
+    ],
+    accidental: [
+      { name:'F♯', key:'f/4', acc:'#' },
+      { name:'C♯', key:'c/5', acc:'#' },
+      { name:'G♯', key:'g/4', acc:'#' },
+      { name:'B♭', key:'b/4', acc:'b' },
+      { name:'E♭', key:'e/5', acc:'b' },
+    ],
+  },
+  bass: {
+    natural: [
+      { name:'G', key:'g/2', acc:null },
+      { name:'A', key:'a/2', acc:null },
+      { name:'B', key:'b/2', acc:null },
+      { name:'C', key:'c/3', acc:null },
+      { name:'D', key:'d/3', acc:null },
+      { name:'E', key:'e/3', acc:null },
+      { name:'F', key:'f/3', acc:null },
+      { name:'G', key:'g/3', acc:null },
+      { name:'A', key:'a/3', acc:null },
+      { name:'C', key:'c/4', acc:null },
+    ],
+    accidental: [
+      { name:'B♭', key:'b/2', acc:'b' },
+      { name:'E♭', key:'e/3', acc:'b' },
+      { name:'F♯', key:'f/3', acc:'#' },
+      { name:'A♭', key:'a/3', acc:'b' },
+    ],
+  },
+  alto: {
+    natural: [
+      { name:'F', key:'f/3', acc:null },
+      { name:'G', key:'g/3', acc:null },
+      { name:'A', key:'a/3', acc:null },
+      { name:'B', key:'b/3', acc:null },
+      { name:'C', key:'c/4', acc:null },
+      { name:'D', key:'d/4', acc:null },
+      { name:'E', key:'e/4', acc:null },
+      { name:'F', key:'f/4', acc:null },
+      { name:'G', key:'g/4', acc:null },
+    ],
+    accidental: [
+      { name:'B♭', key:'b/3', acc:'b' },
+      { name:'F♯', key:'f/4', acc:'#' },
+      { name:'A♭', key:'a/3', acc:'b' },
+    ],
+  },
+};
+
+// All possible card names for distractor pool
+const ALL_NAMES = {
+  natural:     ['C','D','E','F','G','A','B'],
+  accidental:  ['F♯','C♯','G♯','B♭','E♭','A♭'],
+};
+
+// ════════════════════════════════════════════════════════════
+//  WAVE CONFIG
+// ════════════════════════════════════════════════════════════
+const WAVES = [
+  { name:'Note Goblin',   emoji:'👺', hp:50,  atk:15, bonus:400,  time:7500, clefs:['treble'],               acc:false },
+  { name:'Clef Bandit',   emoji:'🦊', hp:75,  atk:18, bonus:600,  time:6500, clefs:['treble'],               acc:false },
+  { name:'Bass Troll',    emoji:'🧌', hp:100, atk:22, bonus:800,  time:5500, clefs:['treble','bass'],        acc:false },
+  { name:'Sharp Witch',   emoji:'🧙', hp:120, atk:25, bonus:1000, time:5000, clefs:['treble','bass'],        acc:true  },
+  { name:'Alto Phantom',  emoji:'👻', hp:140, atk:28, bonus:1200, time:4500, clefs:['treble','bass','alto'], acc:true  },
+  { name:'Dark Maestro',  emoji:'🎩', hp:160, atk:32, bonus:1500, time:4000, clefs:['treble','bass','alto'], acc:true  },
+  { name:'DRAGON KING',   emoji:'🐉', hp:280, atk:40, bonus:5000, time:3500, clefs:['treble','bass','alto'], acc:true, isBoss:true },
+];
+
+const PLAYER_DAMAGE = 30;
+
+// ════════════════════════════════════════════════════════════
+//  GAME STATE
+// ════════════════════════════════════════════════════════════
+let gs = {};  // game state
+
+function resetState() {
+  gs = {
+    wave:        0,
+    playerHp:    100,
+    playerMaxHp: 100,
+    score:       0,
+    combo:       0,
+    enemyHp:     0,
+    enemyMaxHp:  0,
+    currentNote: null,   // { name, key, acc, clef }
+    hand:        [],
+    timerStart:  0,
+    timerLimit:  7000,
+    timerRaf:    null,
+    answered:    false,
+    running:     false,
+  };
+}
+
+// ════════════════════════════════════════════════════════════
+//  AUDIO
+// ════════════════════════════════════════════════════════════
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function beep(freq, dur, type = 'sine', vol = 0.25) {
+  try {
+    const ctx  = getAudio();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.start(); osc.stop(ctx.currentTime + dur);
+  } catch {}
+}
+function sfx(type) {
+  if (type === 'correct') { beep(880, .12); setTimeout(() => beep(1100, .15), 80); }
+  if (type === 'wrong')   { beep(220, .25, 'sawtooth', .15); }
+  if (type === 'hit')     { beep(180, .2,  'square',   .2); }
+  if (type === 'defeat')  { [500,600,750].forEach((f,i) => setTimeout(() => beep(f,.2), i*120)); }
+  if (type === 'boss')    { [300,400,300,500].forEach((f,i) => setTimeout(() => beep(f,.15,'sawtooth'), i*100)); }
+}
+
+// ════════════════════════════════════════════════════════════
+//  VEXFLOW NOTE RENDERING
+// ════════════════════════════════════════════════════════════
+function renderNote(clef, noteData) {
+  const container = document.getElementById('staff-container');
+  container.innerHTML = '';
+
+  const W = Math.min(container.parentElement.clientWidth - 32, 380);
+  const H = 120;
+
+  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+  renderer.resize(W, H);
+  const ctx = renderer.getContext();
+  ctx.setFont('Arial', 12);
+
+  const stave = new VF.Stave(10, 18, W - 20);
+  stave.addClef(clef);
+  stave.setContext(ctx).draw();
+
+  const note = new VF.StaveNote({ keys: [noteData.key], duration: 'w', clef });
+  if (noteData.acc) note.addModifier(new VF.Accidental(noteData.acc), 0);
+
+  const voice = new VF.Voice({ numBeats: 4, beatValue: 4 }).setStrict(false);
+  voice.addTickables([note]);
+  new VF.Formatter().joinVoices([voice]).format([voice], W - 80);
+  voice.draw(ctx, stave);
+
+  document.getElementById('clef-label').textContent =
+    clef === 'treble' ? '𝄞 Treble Clef' : clef === 'bass' ? '𝄢 Bass Clef' : '𝄡 Alto Clef';
+}
+
+// ════════════════════════════════════════════════════════════
+//  HAND / CARDS
+// ════════════════════════════════════════════════════════════
+function buildHand(correctName, useAccidentals) {
+  const pool = useAccidentals
+    ? [...ALL_NAMES.natural, ...ALL_NAMES.accidental]
+    : [...ALL_NAMES.natural];
+  const distractors = pool.filter(n => n !== correctName)
+    .sort(() => Math.random() - .5).slice(0, 4);
+  return [correctName, ...distractors].sort(() => Math.random() - .5);
+}
+
+function renderHand() {
+  const hand = document.getElementById('hand');
+  hand.innerHTML = '';
+  gs.hand.forEach(name => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const isSharp = name.includes('♯');
+    const isFlat  = name.includes('♭');
+    const cls = isSharp ? 'sharp' : isFlat ? 'flat' : '';
+    card.innerHTML = `
+      <div class="card-corner">${name}</div>
+      <div class="card-name${cls ? ' '+cls : ''}">${name}</div>
+      <div class="card-suit">♪</div>`;
+    card.addEventListener('click', () => playCard(name, card));
+    hand.appendChild(card);
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+//  TIMER
+// ════════════════════════════════════════════════════════════
+function startTimer() {
+  gs.timerStart = performance.now();
+  tickTimer();
+}
+
+function tickTimer() {
+  if (!gs.running || gs.answered) return;
+  const elapsed = performance.now() - gs.timerStart;
+  const ratio   = Math.max(0, 1 - elapsed / gs.timerLimit);
+  const bar     = document.getElementById('timer-bar');
+  bar.style.width    = (ratio * 100) + '%';
+  bar.className      = 'timer-bar' + (ratio < .3 ? ' urgent pulsing' : '');
+
+  if (ratio <= 0) {
+    handleTimeout();
+    return;
+  }
+  gs.timerRaf = requestAnimationFrame(tickTimer);
+}
+
+function stopTimer() {
+  cancelAnimationFrame(gs.timerRaf);
+  document.getElementById('timer-bar').className = 'timer-bar';
+}
+
+function timeBonus() {
+  const elapsed = performance.now() - gs.timerStart;
+  const ratio   = Math.max(0, 1 - elapsed / gs.timerLimit);
+  return Math.round(ratio * 150);
+}
+
+// ════════════════════════════════════════════════════════════
+//  GAME ACTIONS
+// ════════════════════════════════════════════════════════════
+function pickNote() {
+  const wave = WAVES[gs.wave];
+  const clef = wave.clefs[Math.floor(Math.random() * wave.clefs.length)];
+  const pool = [...NOTE_POOL[clef].natural, ...(wave.acc ? NOTE_POOL[clef].accidental : [])];
+  const note = pool[Math.floor(Math.random() * pool.length)];
+  return { ...note, clef };
+}
+
+function newQuestion() {
+  if (!gs.running) return;
+  gs.answered = false;
+  gs.currentNote = pickNote();
+  gs.hand = buildHand(gs.currentNote.name, WAVES[gs.wave].acc);
+  renderHand();
+  renderNote(gs.currentNote.clef, gs.currentNote);
+  clearFeedback();
+  startTimer();
+}
+
+function playCard(name, cardEl) {
+  if (gs.answered || !gs.running) return;
+  gs.answered = true;
+  stopTimer();
+
+  if (name === gs.currentNote.name) {
+    handleCorrect(cardEl);
+  } else {
+    handleWrong(cardEl);
+  }
+}
+
+function handleCorrect(cardEl) {
+  sfx('correct');
+  gs.combo++;
+  const comboMult = Math.min(4, 1 + (gs.combo - 1) * 0.5);
+  const pts = Math.round((100 + timeBonus()) * comboMult);
+  gs.score += pts;
+
+  // Animate card
+  cardEl.classList.add('played');
+
+  // Damage enemy
+  const dmg = Math.round(PLAYER_DAMAGE * comboMult);
+  gs.enemyHp = Math.max(0, gs.enemyHp - dmg);
+
+  showFeedback(`+${pts}`, 'correct');
+  spawnFloater(`-${dmg}`, 'hit', document.getElementById('enemy-emoji'));
+  updateUI();
+
+  const wave = WAVES[gs.wave];
+  if (wave.isBoss) sfx('boss');
+
+  if (gs.enemyHp <= 0) {
+    setTimeout(() => enemyDefeated(), 500);
+  } else {
+    setTimeout(() => newQuestion(), 600);
+  }
+}
+
+function handleWrong(cardEl) {
+  sfx('wrong');
+  gs.combo = 0;
+  cardEl.classList.add('wrong-flash');
+  showFeedback('✗ Wrong!', 'wrong');
+  applyEnemyAttack();
+  updateUI();
+  setTimeout(() => newQuestion(), 800);
+}
+
+function handleTimeout() {
+  if (!gs.running || gs.answered) return;
+  gs.answered = true;
+  gs.combo = 0;
+  sfx('hit');
+  showFeedback('⏱ Too slow!', 'wrong');
+  applyEnemyAttack();
+  updateUI();
+  setTimeout(() => newQuestion(), 800);
+}
+
+function applyEnemyAttack() {
+  const wave = WAVES[gs.wave];
+  gs.playerHp = Math.max(0, gs.playerHp - wave.atk);
+  document.getElementById('player-hp-bar').classList.add('danger');
+  spawnFloater(`-${wave.atk}`, 'dmg', document.getElementById('player-hp-text'));
+  setTimeout(() => document.getElementById('player-hp-bar').classList.remove('danger'), 500);
+
+  if (gs.playerHp <= 0) {
+    gs.running = false;
+    setTimeout(() => gameOver(), 600);
+  }
+}
+
+function enemyDefeated() {
+  sfx('defeat');
+  const wave = WAVES[gs.wave];
+  gs.score += wave.bonus;
+
+  if (wave.isBoss) {
+    victory();
+    return;
+  }
+
+  gs.wave++;
+  if (gs.wave >= WAVES.length) { victory(); return; }
+
+  showFeedback('⚔️ Enemy defeated!', 'correct');
+  setTimeout(() => {
+    clearFeedback();
+    startWave();
+  }, 1200);
+}
+
+// ════════════════════════════════════════════════════════════
+//  WAVE MANAGEMENT
+// ════════════════════════════════════════════════════════════
+function startWave() {
+  const wave = WAVES[gs.wave];
+  gs.enemyHp    = wave.hp;
+  gs.enemyMaxHp = wave.hp;
+  gs.timerLimit = wave.time;
+
+  document.getElementById('enemy-emoji').textContent = wave.emoji;
+  document.getElementById('enemy-emoji').className   = 'enemy-emoji' + (wave.isBoss ? ' boss-glow' : '');
+  document.getElementById('enemy-name').textContent  = wave.isBoss ? `⚡ ${wave.name}` : wave.name;
+  document.getElementById('enemy-hp-max').textContent = wave.hp;
+
+  updateUI();
+  setTimeout(() => newQuestion(), 400);
+}
+
+// ════════════════════════════════════════════════════════════
+//  UI UPDATES
+// ════════════════════════════════════════════════════════════
+function updateUI() {
+  const wave = WAVES[gs.wave];
+
+  // Enemy HP
+  const enemyPct = gs.enemyHp / gs.enemyMaxHp * 100;
+  document.getElementById('enemy-hp-bar').style.width = enemyPct + '%';
+  document.getElementById('enemy-hp-cur').textContent = gs.enemyHp;
+
+  // Player HP
+  const playerPct = gs.playerHp / gs.playerMaxHp * 100;
+  document.getElementById('player-hp-bar').style.width = playerPct + '%';
+  document.getElementById('player-hp-text').textContent = `❤️ ${gs.playerHp}`;
+
+  // Score
+  document.getElementById('score-display').textContent = gs.score.toLocaleString();
+
+  // Combo
+  const badge = document.getElementById('combo-badge');
+  if (gs.combo >= 2) {
+    badge.textContent = `COMBO ×${Math.min(4, gs.combo)}`;
+    badge.classList.add('visible');
+  } else {
+    badge.classList.remove('visible');
+  }
+
+  // Shake emoji on hit
+  const emojiEl = document.getElementById('enemy-emoji');
+  emojiEl.classList.remove('shake');
+  void emojiEl.offsetWidth;
+  if (gs.enemyHp < gs.enemyMaxHp) emojiEl.classList.add('shake');
+}
+
+function showFeedback(msg, type) {
+  const el = document.getElementById('feedback');
+  el.textContent = msg;
+  el.className = `feedback ${type}`;
+}
+function clearFeedback() {
+  const el = document.getElementById('feedback');
+  el.textContent = '';
+  el.className = 'feedback';
+}
+
+function spawnFloater(text, type, anchor) {
+  if (!anchor) return;
+  const rect = anchor.getBoundingClientRect();
+  const div  = document.createElement('div');
+  div.className = `floater ${type}`;
+  div.textContent = text;
+  div.style.left = (rect.left + rect.width / 2 - 20) + 'px';
+  div.style.top  = rect.top + 'px';
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 950);
+}
+
+// ════════════════════════════════════════════════════════════
+//  GAME START / OVER / VICTORY
+// ════════════════════════════════════════════════════════════
+function startGame() {
+  resetState();
+  gs.running = true;
+  showScreen('game');
+  startWave();
+}
+
+function gameOver() {
+  stopTimer();
+  gs.running = false;
+  document.getElementById('go-score').textContent = gs.score.toLocaleString();
+  document.getElementById('go-summary').textContent =
+    `Reached Wave ${gs.wave + 1}: ${WAVES[gs.wave].name}`;
+  showScreen('gameover');
+}
+
+function victory() {
+  stopTimer();
+  gs.running = false;
+  const bonus = 5000;
+  gs.score += bonus;
+  document.getElementById('vic-score').textContent = gs.score.toLocaleString();
+  document.getElementById('vic-summary').textContent =
+    `All 7 waves defeated! Boss bonus: +${bonus.toLocaleString()}`;
+  showScreen('victory');
+}
+
+// ════════════════════════════════════════════════════════════
+//  LEADERBOARD
+// ════════════════════════════════════════════════════════════
+const LB_KEY = 'notequest_lb_v1';
+
+function loadLB() {
+  try { return JSON.parse(localStorage.getItem(LB_KEY)) || []; } catch { return []; }
+}
+
+function saveLB(lb) {
+  localStorage.setItem(LB_KEY, JSON.stringify(lb));
+}
+
+function submitScore(isVictory) {
+  const inputId = isVictory ? 'vic-name' : 'go-name';
+  const name = document.getElementById(inputId).value.trim() || 'Anonymous';
+  const lb = loadLB();
+  lb.push({
+    name,
+    score: gs.score,
+    date:  new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short' }),
+    won:   isVictory,
+  });
+  lb.sort((a, b) => b.score - a.score);
+  saveLB(lb.slice(0, 20));
+  showMenu();
+}
+
+function renderLB(containerId) {
+  const lb  = loadLB();
+  const el  = document.getElementById(containerId);
+  if (!lb.length) { el.innerHTML = '<p class="lb-empty">No scores yet — play to set the first record!</p>'; return; }
+  el.innerHTML = `
+    <table class="lb-table">
+      <tr><th>#</th><th>Name</th><th>Date</th><th class="lb-score">Score</th></tr>
+      ${lb.slice(0,20).map((e, i) => `
+        <tr>
+          <td class="lb-rank">${i+1}</td>
+          <td>${e.name}${e.won ? ' 👑' : ''}</td>
+          <td style="color:var(--text-dim);font-size:.75rem">${e.date}</td>
+          <td class="lb-score">${e.score.toLocaleString()}</td>
+        </tr>`).join('')}
+    </table>`;
+}
+
+// ════════════════════════════════════════════════════════════
+//  SCREEN MANAGEMENT
+// ════════════════════════════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+function showMenu() {
+  stopTimer();
+  gs.running = false;
+  renderLB('lb-menu');
+  showScreen('menu');
+}
+
+// ════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  resetState();
+  renderLB('lb-menu');
+});
+</script>
+</body>
+</html>
