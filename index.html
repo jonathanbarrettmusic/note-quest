@@ -590,6 +590,7 @@
       margin-bottom: .2rem;
     }
     .avatar-card-class { font-size: .72rem; color: var(--text-dim); }
+    .avatar-stats { font-size: .62rem; color: var(--text-dim); margin-top: .35rem; opacity: .8; }
     #btn-begin:disabled { opacity: .35; cursor: not-allowed; }
   </style>
 </head>
@@ -619,11 +620,13 @@
       <div class="avatar-preview" id="preview-m"></div>
       <div class="avatar-card-name">Bardic Knight</div>
       <div class="avatar-card-class">⚔️ Treble Warrior</div>
+      <div class="avatar-stats">❤️ 150 HP &nbsp;·&nbsp; ⚔️ Standard combo</div>
     </div>
     <div class="avatar-card" id="card-f" onclick="selectAvatar('f')">
       <div class="avatar-preview" id="preview-f"></div>
       <div class="avatar-card-name">Melody Mage</div>
       <div class="avatar-card-class">✨ Bass Sorceress</div>
+      <div class="avatar-stats">❤️ 105 HP &nbsp;·&nbsp; ✨ +30% combo</div>
     </div>
   </div>
   <button class="btn btn-gold" id="btn-begin" onclick="beginQuest()" disabled>▶ Begin Quest</button>
@@ -1176,6 +1179,14 @@ f: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 120">
 };
 
 // ════════════════════════════════════════════════════════════
+//  AVATAR STATS
+// ════════════════════════════════════════════════════════════
+const AVATAR_STATS = {
+  m: { hp: 150, comboBonus: 1.0 }, // Bardic Knight — 150 HP, standard combo damage
+  f: { hp: 105, comboBonus: 1.3 }, // Melody Mage   — 105 HP, +30% combo multiplier
+};
+
+// ════════════════════════════════════════════════════════════
 //  WAVE CONFIG
 // ════════════════════════════════════════════════════════════
 const WAVES = [
@@ -1214,6 +1225,7 @@ function resetState() {
     playerMaxHp: 100,
     score:       0,
     combo:       0,
+    comboBonus:  1,
     enemyHp:     0,
     enemyMaxHp:  0,
     currentNote: null,   // { name, key, acc, clef }
@@ -1410,7 +1422,7 @@ function playCard(name, cardEl) {
 function handleCorrect(cardEl) {
   sfx('correct');
   gs.combo++;
-  const comboMult = Math.min(4, 1 + (gs.combo - 1) * 0.5);
+  const comboMult = Math.min(4, 1 + (gs.combo - 1) * 0.5) * gs.comboBonus;
   const pts = Math.round((100 + timeBonus()) * comboMult);
   gs.score += pts;
 
@@ -1681,6 +1693,10 @@ function beginQuest() {
   if (!avatar) return;
   resetState();
   gs.playerAvatar = avatar;
+  const stats = AVATAR_STATS[avatar];
+  gs.playerHp    = stats.hp;
+  gs.playerMaxHp = stats.hp;
+  gs.comboBonus  = stats.comboBonus;
   initHand();
   gs.running = true;
   document.getElementById('player-sprite').innerHTML = PLAYER_SPRITES[avatar];
