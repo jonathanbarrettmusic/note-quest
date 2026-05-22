@@ -283,6 +283,165 @@
       opacity: 0;
     }
     #screen-flash.active { animation: screenFlash .5s ease forwards; }
+
+    /* ══════════════════════════════════════════════
+       ENVIRONMENT SYSTEM
+    ══════════════════════════════════════════════ */
+    #screen-game { position: relative; }
+    .enemy-zone  { position: relative; z-index: 1; background: rgba(22,33,62,.86); }
+    .score-row   { position: relative; z-index: 1; background: rgba(0,0,0,.42); }
+    .staff-zone  { position: relative; z-index: 1; }
+    .hand-zone   { position: relative; z-index: 1; background: rgba(22,33,62,.90); }
+    .staff-container { background: rgba(250,248,240,.93); }
+
+    #game-bg {
+      position: absolute; inset: 0; z-index: 0;
+      transition: opacity .5s ease;
+    }
+    #game-bg::before, #game-bg::after {
+      content: ''; position: absolute; left: 0; right: 0;
+    }
+
+    /* ── Forest · night woodland ── */
+    .env-forest {
+      background:
+        radial-gradient(circle at 78% 14%, rgba(255,255,210,.85) 10px, rgba(220,220,160,.2) 34px, transparent 55px),
+        radial-gradient(ellipse at 50% 40%, rgba(10,60,20,.45) 20%, transparent 65%),
+        linear-gradient(to bottom, #030c08 0%, #06180e 28%, #0b2e16 58%, #050e08 100%);
+      animation: ambientBreathe 10s ease-in-out infinite;
+    }
+    .env-forest::before {
+      bottom: 0; height: 32%;
+      background: #031008;
+      clip-path: polygon(0 100%,0 55%,4% 28%,8% 52%,12% 18%,16% 42%,20% 58%,24% 22%,28% 46%,33% 36%,38% 54%,43% 12%,48% 40%,53% 50%,58% 20%,62% 44%,67% 56%,72% 24%,76% 46%,81% 34%,86% 52%,90% 22%,94% 46%,98% 37%,100% 52%,100% 100%);
+    }
+
+    /* ── Town · warm evening ── */
+    .env-town {
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(255,140,60,.35) 0%, transparent 55%),
+        radial-gradient(circle at 20% 12%, rgba(255,110,50,.6) 8px, rgba(255,80,30,.15) 40px, transparent 70px),
+        radial-gradient(circle at 62% 18%, rgba(200,80,20,.4) 6px, rgba(180,60,10,.1) 30px, transparent 55px),
+        linear-gradient(to bottom, #100505 0%, #3e1808 30%, #602808 62%, #281005 100%);
+      animation: ambientBreathe 12s ease-in-out infinite;
+    }
+    .env-town::before {
+      bottom: 0; height: 40%;
+      background: linear-gradient(to bottom, #1e0a03, #100402);
+      clip-path: polygon(0 100%,0 60%,5% 60%,5% 30%,10% 30%,10% 50%,15% 50%,15% 20%,20% 20%,20% 10%,25% 10%,25% 20%,30% 20%,30% 50%,38% 50%,38% 35%,43% 35%,43% 50%,50% 50%,50% 15%,56% 15%,56% 5%,62% 5%,62% 15%,68% 15%,68% 50%,75% 50%,75% 30%,80% 30%,80% 50%,87% 50%,87% 40%,92% 40%,92% 55%,100% 55%,100% 100%);
+    }
+
+    /* ── Cave · underground dungeon ── */
+    .env-cave {
+      background:
+        radial-gradient(circle at 25% 72%, rgba(0,110,210,.35) 18px, rgba(0,85,170,.1) 55px, transparent 90px),
+        radial-gradient(circle at 70% 68%, rgba(0,160,240,.28) 14px, rgba(0,125,195,.08) 45px, transparent 75px),
+        radial-gradient(ellipse at 50% 100%, rgba(0,55,115,.45) 0%, transparent 60%),
+        linear-gradient(to bottom, #040408 0%, #08082a 32%, #10103c 62%, #060618 100%);
+      animation: crystalShimmer 7s ease-in-out infinite;
+    }
+    .env-cave::before {
+      bottom: 0; height: 25%;
+      background: #050515;
+      clip-path: polygon(0 100%,0 70%,6% 42%,12% 68%,18% 50%,24% 74%,30% 44%,36% 66%,42% 32%,48% 62%,54% 46%,60% 70%,66% 40%,72% 66%,78% 50%,84% 72%,90% 38%,96% 64%,100% 54%,100% 100%);
+    }
+    .env-cave::after {
+      top: 0; height: 20%;
+      background: #040415;
+      clip-path: polygon(0 0%,0 55%,6% 80%,12% 46%,18% 70%,24% 42%,30% 66%,36% 32%,42% 56%,48% 76%,54% 40%,60% 62%,66% 80%,72% 46%,78% 66%,84% 42%,90% 70%,96% 50%,100% 66%,100% 0%);
+    }
+
+    /* ── Dark Wood · haunted forest ── */
+    .env-darkwood {
+      background:
+        radial-gradient(ellipse at 50% 50%, rgba(80,0,120,.22) 0%, transparent 65%),
+        radial-gradient(circle at 15% 22%, rgba(160,0,220,.28) 16px, rgba(120,0,180,.07) 60px, transparent 100px),
+        radial-gradient(circle at 78% 28%, rgba(120,0,200,.22) 12px, rgba(100,0,160,.05) 50px, transparent 85px),
+        linear-gradient(to bottom, #060412 0%, #120828 32%, #1e1048 62%, #080420 100%);
+      animation: ambientBreathe 9s ease-in-out infinite;
+    }
+    .env-darkwood::before {
+      bottom: 0; height: 45%;
+      background: #07041a;
+      clip-path: polygon(0 100%,0 0%,2% 0%,2% 30%,6% 30%,6% 0%,8% 0%,8% 45%,13% 45%,13% 0%,15% 0%,15% 50%,21% 50%,21% 0%,23% 0%,23% 35%,29% 35%,29% 0%,31% 0%,31% 45%,37% 45%,37% 0%,39% 0%,39% 40%,47% 40%,47% 0%,49% 0%,49% 50%,55% 50%,55% 0%,57% 0%,57% 35%,63% 35%,63% 0%,65% 0%,65% 45%,71% 45%,71% 0%,73% 0%,73% 40%,81% 40%,81% 0%,83% 0%,83% 50%,89% 50%,89% 0%,91% 0%,91% 35%,96% 35%,96% 0%,100% 0%,100% 100%);
+    }
+
+    /* ── Ruins · ancient graveyard ── */
+    .env-ruins {
+      background:
+        radial-gradient(circle at 50% 22%, rgba(140,175,130,.15) 22px, rgba(100,145,95,.05) 70px, transparent 110px),
+        radial-gradient(ellipse at 50% 55%, rgba(55,75,50,.25) 0%, transparent 60%),
+        linear-gradient(to bottom, #060806 0%, #0c100a 30%, #151810 60%, #080a06 100%);
+      animation: ambientBreathe 14s ease-in-out infinite;
+    }
+    .env-ruins::before {
+      bottom: 0; height: 35%;
+      background: #090c08;
+      clip-path: polygon(0 100%,0 55%,5% 55%,5% 30%,10% 30%,10% 50%,15% 50%,15% 20%,18% 20%,20% 35%,25% 35%,25% 15%,32% 15%,32% 40%,40% 40%,40% 50%,45% 50%,45% 25%,50% 25%,50% 50%,60% 50%,60% 30%,65% 30%,65% 10%,70% 10%,72% 30%,78% 30%,78% 45%,83% 45%,83% 20%,88% 20%,88% 40%,93% 40%,93% 55%,100% 55%,100% 100%);
+    }
+
+    /* ── Castle · gothic interior ── */
+    .env-castle {
+      background:
+        radial-gradient(circle at 50% 0%, rgba(80,0,130,.45) 0%, transparent 55%),
+        radial-gradient(ellipse at 22% 38%, rgba(100,0,150,.18) 40px, transparent 110px),
+        radial-gradient(ellipse at 78% 42%, rgba(80,0,120,.15) 35px, transparent 90px),
+        linear-gradient(to bottom, #030006 0%, #08000e 30%, #12001e 62%, #050008 100%);
+      animation: castleGlow 8s ease-in-out infinite;
+    }
+    .env-castle::after {
+      top: 0; height: 18%;
+      background: #040008;
+      clip-path: polygon(0 0%,0 100%,5% 100%,5% 50%,10% 50%,10% 100%,15% 100%,15% 50%,20% 50%,20% 100%,25% 100%,25% 50%,30% 50%,30% 100%,35% 100%,35% 50%,40% 50%,40% 100%,45% 100%,45% 50%,50% 50%,50% 100%,55% 100%,55% 50%,60% 50%,60% 100%,65% 100%,65% 50%,70% 50%,70% 100%,75% 100%,75% 50%,80% 50%,80% 100%,85% 100%,85% 50%,90% 50%,90% 100%,95% 100%,95% 50%,100% 50%,100% 0%);
+    }
+
+    /* ── Dragon Lair · volcanic cave ── */
+    .env-lair {
+      background:
+        radial-gradient(ellipse at 50% 100%, rgba(255,100,0,.62) 0%, rgba(200,40,0,.38) 28%, transparent 65%),
+        radial-gradient(circle at 20% 86%, rgba(255,160,0,.38) 22px, rgba(255,100,0,.1) 70px, transparent 110px),
+        radial-gradient(circle at 72% 82%, rgba(255,120,0,.42) 18px, rgba(255,80,0,.1) 60px, transparent 95px),
+        radial-gradient(ellipse at 50% 0%, rgba(100,0,0,.65) 0%, transparent 50%),
+        linear-gradient(to bottom, #120000 0%, #380500 35%, #5e1000 65%, #1e0300 100%);
+      animation: lavaFlicker 3s ease-in-out infinite;
+    }
+    .env-lair::before {
+      bottom: 0; height: 30%;
+      background: linear-gradient(to top, #0e0200, #1e0300);
+      clip-path: polygon(0 100%,0 80%,5% 52%,10% 75%,15% 42%,20% 65%,25% 32%,30% 60%,35% 78%,40% 46%,45% 66%,50% 28%,55% 56%,60% 74%,65% 42%,70% 64%,75% 32%,80% 60%,85% 46%,90% 70%,95% 50%,100% 75%,100% 100%);
+    }
+    .env-lair::after {
+      top: 0; height: 15%;
+      background: #0e0100;
+      clip-path: polygon(0 0%,0 70%,8% 100%,16% 62%,24% 90%,32% 52%,40% 80%,50% 100%,60% 70%,68% 95%,76% 58%,84% 85%,92% 66%,100% 82%,100% 0%);
+    }
+
+    /* ── Ambient animations ── */
+    @keyframes ambientBreathe {
+      0%,100% { filter: brightness(1);    }
+      50%      { filter: brightness(1.07); }
+    }
+    @keyframes crystalShimmer {
+      0%,100% { filter: brightness(1)    hue-rotate(0deg);  }
+      50%      { filter: brightness(1.12) hue-rotate(12deg); }
+    }
+    @keyframes castleGlow {
+      0%,100% { filter: brightness(1)    saturate(1);    }
+      50%      { filter: brightness(1.06) saturate(1.15); }
+    }
+    @keyframes lavaFlicker {
+      0%,100% { filter: brightness(1)    saturate(1);    }
+      20%      { filter: brightness(1.18) saturate(1.25); }
+      55%      { filter: brightness(.9)   saturate(.85);  }
+      78%      { filter: brightness(1.12) saturate(1.18); }
+    }
+
+    /* ── New card deal animation ── */
+    @keyframes dealCard {
+      0%   { transform: translateY(-18px) scale(.9); opacity: 0; }
+      100% { transform: translateY(0)     scale(1);  opacity: 1; }
+    }
+    .card.dealing { animation: dealCard .3s ease forwards; }
   </style>
 </head>
 <body>
@@ -303,6 +462,7 @@
 
 <!-- ═══ GAME ═══ -->
 <div id="screen-game" class="screen">
+  <div id="game-bg"></div>
   <!-- Enemy zone -->
   <div class="enemy-zone">
     <div class="enemy-row">
@@ -444,13 +604,25 @@ const ALL_NAMES = {
 //  WAVE CONFIG
 // ════════════════════════════════════════════════════════════
 const WAVES = [
-  { name:'Note Goblin',   emoji:'👺', hp:50,  atk:15, bonus:400,  time:7500, clefs:['treble'],               acc:false },
-  { name:'Clef Bandit',   emoji:'🦊', hp:75,  atk:18, bonus:600,  time:6500, clefs:['treble'],               acc:false },
-  { name:'Bass Troll',    emoji:'🧌', hp:100, atk:22, bonus:800,  time:5500, clefs:['treble','bass'],        acc:false },
-  { name:'Sharp Witch',   emoji:'🧙', hp:120, atk:25, bonus:1000, time:5000, clefs:['treble','bass'],        acc:true  },
-  { name:'Alto Phantom',  emoji:'👻', hp:140, atk:28, bonus:1200, time:4500, clefs:['treble','bass','alto'], acc:true  },
-  { name:'Dark Maestro',  emoji:'🎩', hp:160, atk:32, bonus:1500, time:4000, clefs:['treble','bass','alto'], acc:true  },
-  { name:'DRAGON KING',   emoji:'🐉', hp:280, atk:40, bonus:5000, time:3500, clefs:['treble','bass','alto'], acc:true, isBoss:true },
+  // ── Act 1 · Forest ──────────────────────────────────────────
+  { name:'Note Goblin',   emoji:'👺', hp:80,  atk:12, bonus:250,  time:8000, clefs:['treble'],               acc:false, env:'forest'  },
+  { name:'Goblin Brute',  emoji:'👺', hp:130, atk:14, bonus:400,  time:7500, clefs:['treble'],               acc:false, env:'forest'  },
+  // ── Act 2 · Town ────────────────────────────────────────────
+  { name:'Clef Bandit',   emoji:'🦊', hp:160, atk:18, bonus:600,  time:7000, clefs:['treble'],               acc:false, env:'town'    },
+  // ── Act 3 · Cave ────────────────────────────────────────────
+  { name:'Bass Troll',    emoji:'🧌', hp:200, atk:20, bonus:800,  time:6000, clefs:['treble','bass'],        acc:false, env:'cave'    },
+  { name:'Cave Ogre',     emoji:'🧌', hp:260, atk:22, bonus:1000, time:5500, clefs:['treble','bass'],        acc:false, env:'cave'    },
+  // ── Act 4 · Dark Wood ───────────────────────────────────────
+  { name:'Sharp Witch',   emoji:'🧙', hp:250, atk:24, bonus:1100, time:5500, clefs:['treble','bass'],        acc:true,  env:'darkwood' },
+  { name:'Coven Elder',   emoji:'🧙', hp:310, atk:26, bonus:1400, time:5000, clefs:['treble','bass'],        acc:true,  env:'darkwood' },
+  // ── Act 5 · Ruins ───────────────────────────────────────────
+  { name:'Alto Phantom',  emoji:'👻', hp:320, atk:28, bonus:1600, time:4500, clefs:['treble','bass','alto'], acc:true,  env:'ruins'   },
+  // ── Act 6 · Castle ──────────────────────────────────────────
+  { name:'Dark Maestro',  emoji:'🎩', hp:360, atk:32, bonus:2000, time:4200, clefs:['treble','bass','alto'], acc:true,  env:'castle'  },
+  { name:'Grand Maestro', emoji:'🎩', hp:420, atk:35, bonus:2500, time:4000, clefs:['treble','bass','alto'], acc:true,  env:'castle'  },
+  // ── Act 7 · Dragon Lair ─────────────────────────────────────
+  { name:'Shadow Dragon', emoji:'🐲', hp:480, atk:38, bonus:3500, time:3800, clefs:['treble','bass','alto'], acc:true,  env:'lair'    },
+  { name:'DRAGON KING',   emoji:'🐉', hp:650, atk:42, bonus:10000,time:3500, clefs:['treble','bass','alto'], acc:true,  env:'lair',   isBoss:true },
 ];
 
 const PLAYER_DAMAGE = 30;
@@ -471,6 +643,7 @@ function resetState() {
     enemyMaxHp:  0,
     currentNote: null,   // { name, key, acc, clef }
     hand:        [],
+    newCardIdx:  -1,
     timerStart:  0,
     timerLimit:  7000,
     timerRaf:    null,
@@ -541,31 +714,62 @@ function renderNote(clef, noteData) {
 // ════════════════════════════════════════════════════════════
 //  HAND / CARDS
 // ════════════════════════════════════════════════════════════
-function buildHand(correctName, useAccidentals) {
-  const pool = useAccidentals
+// ── Persistent hand ─────────────────────────────────────────────────────────
+
+function getNamePool() {
+  return WAVES[gs.wave].acc
     ? [...ALL_NAMES.natural, ...ALL_NAMES.accidental]
     : [...ALL_NAMES.natural];
-  const distractors = pool.filter(n => n !== correctName)
-    .sort(() => Math.random() - .5).slice(0, 4);
-  return [correctName, ...distractors].sort(() => Math.random() - .5);
+}
+
+function initHand() {
+  const pool = [...getNamePool()].sort(() => Math.random() - .5);
+  gs.hand = pool.slice(0, 5);
+  gs.newCardIdx = -1;
+}
+
+function drawCard() {
+  const pool = getNamePool();
+  const available = pool.filter(n => !gs.hand.includes(n));
+  const src = available.length ? available : pool;
+  return src[Math.floor(Math.random() * src.length)];
+}
+
+function replaceCard(name) {
+  const idx = gs.hand.indexOf(name);
+  if (idx !== -1) { gs.hand[idx] = drawCard(); gs.newCardIdx = idx; }
+}
+
+function pickNoteFromHand() {
+  const wave = WAVES[gs.wave];
+  const candidates = [];
+  for (const clef of wave.clefs) {
+    const pool = [...NOTE_POOL[clef].natural, ...(wave.acc ? NOTE_POOL[clef].accidental : [])];
+    for (const note of pool) {
+      if (gs.hand.includes(note.name)) candidates.push({ ...note, clef });
+    }
+  }
+  if (!candidates.length) { initHand(); return pickNoteFromHand(); }
+  return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
 function renderHand() {
-  const hand = document.getElementById('hand');
-  hand.innerHTML = '';
-  gs.hand.forEach(name => {
+  const handEl = document.getElementById('hand');
+  handEl.innerHTML = '';
+  gs.hand.forEach((name, idx) => {
     const card = document.createElement('div');
-    card.className = 'card';
     const isSharp = name.includes('♯');
     const isFlat  = name.includes('♭');
     const cls = isSharp ? 'sharp' : isFlat ? 'flat' : '';
+    card.className = 'card' + (idx === gs.newCardIdx ? ' dealing' : '');
     card.innerHTML = `
       <div class="card-corner">${name}</div>
       <div class="card-name${cls ? ' '+cls : ''}">${name}</div>
       <div class="card-suit">♪</div>`;
     card.addEventListener('click', () => playCard(name, card));
-    hand.appendChild(card);
+    handEl.appendChild(card);
   });
+  gs.newCardIdx = -1;
 }
 
 // ════════════════════════════════════════════════════════════
@@ -605,19 +809,10 @@ function timeBonus() {
 // ════════════════════════════════════════════════════════════
 //  GAME ACTIONS
 // ════════════════════════════════════════════════════════════
-function pickNote() {
-  const wave = WAVES[gs.wave];
-  const clef = wave.clefs[Math.floor(Math.random() * wave.clefs.length)];
-  const pool = [...NOTE_POOL[clef].natural, ...(wave.acc ? NOTE_POOL[clef].accidental : [])];
-  const note = pool[Math.floor(Math.random() * pool.length)];
-  return { ...note, clef };
-}
-
 function newQuestion() {
   if (!gs.running) return;
   gs.answered = false;
-  gs.currentNote = pickNote();
-  gs.hand = buildHand(gs.currentNote.name, WAVES[gs.wave].acc);
+  gs.currentNote = pickNoteFromHand();
   renderHand();
   renderNote(gs.currentNote.clef, gs.currentNote);
   clearFeedback();
@@ -632,7 +827,7 @@ function playCard(name, cardEl) {
   if (name === gs.currentNote.name) {
     handleCorrect(cardEl);
   } else {
-    handleWrong(cardEl);
+    handleWrong(name, cardEl);
   }
 }
 
@@ -649,6 +844,7 @@ function handleCorrect(cardEl) {
   // Damage enemy
   const dmg = Math.round(PLAYER_DAMAGE * comboMult);
   gs.enemyHp = Math.max(0, gs.enemyHp - dmg);
+  replaceCard(gs.currentNote.name);
 
   showFeedback(`+${pts}`, 'correct');
   spawnFloater(`-${dmg}`, 'hit', document.getElementById('enemy-emoji'));
@@ -665,11 +861,12 @@ function handleCorrect(cardEl) {
   }
 }
 
-function handleWrong(cardEl) {
+function handleWrong(name, cardEl) {
   sfx('wrong');
   gs.combo = 0;
   cardEl.classList.add('wrong-flash');
   showFeedback('✗ Wrong!', 'wrong');
+  replaceCard(name);
   applyEnemyAttack();
   updateUI();
   setTimeout(() => newQuestion(), 800);
@@ -750,6 +947,7 @@ function startWave() {
   document.getElementById('enemy-name').textContent  = wave.isBoss ? `⚡ ${wave.name}` : wave.name;
   document.getElementById('enemy-hp-max').textContent = wave.hp;
 
+  setEnvironment(wave.env);
   updateUI();
   setTimeout(() => newQuestion(), 400);
 }
@@ -810,8 +1008,15 @@ function spawnFloater(text, type, anchor) {
 // ════════════════════════════════════════════════════════════
 //  GAME START / OVER / VICTORY
 // ════════════════════════════════════════════════════════════
+function setEnvironment(env) {
+  const bg = document.getElementById('game-bg');
+  bg.style.opacity = '0';
+  setTimeout(() => { bg.className = `env-${env}`; bg.style.opacity = '1'; }, 450);
+}
+
 function startGame() {
   resetState();
+  initHand();
   gs.running = true;
   showScreen('game');
   startWave();
@@ -833,7 +1038,7 @@ function victory() {
   gs.score += bonus;
   document.getElementById('vic-score').textContent = gs.score.toLocaleString();
   document.getElementById('vic-summary').textContent =
-    `All 7 waves defeated! Boss bonus: +${bonus.toLocaleString()}`;
+    `All waves defeated! Boss bonus: +${bonus.toLocaleString()}`;
   showScreen('victory');
 }
 
