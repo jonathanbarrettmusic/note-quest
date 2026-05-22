@@ -626,7 +626,7 @@
       <div class="avatar-preview" id="preview-f"></div>
       <div class="avatar-card-name">Melody Mage</div>
       <div class="avatar-card-class">✨ Bass Sorceress</div>
-      <div class="avatar-stats">❤️ 105 HP &nbsp;·&nbsp; ✨ +30% combo</div>
+      <div class="avatar-stats">❤️ 100 HP &nbsp;·&nbsp; ✨ +30% combo</div>
     </div>
   </div>
   <button class="btn btn-gold" id="btn-begin" onclick="beginQuest()" disabled>▶ Begin Quest</button>
@@ -1183,7 +1183,7 @@ f: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 120">
 // ════════════════════════════════════════════════════════════
 const AVATAR_STATS = {
   m: { hp: 150, comboBonus: 1.0 }, // Bardic Knight — 150 HP, standard combo damage
-  f: { hp: 105, comboBonus: 1.3 }, // Melody Mage   — 105 HP, +30% combo multiplier
+  f: { hp: 100, comboBonus: 1.3 }, // Melody Mage   — 100 HP, +30% combo multiplier
 };
 
 // ════════════════════════════════════════════════════════════
@@ -1260,7 +1260,40 @@ function beep(freq, dur, type = 'sine', vol = 0.25) {
     osc.start(); osc.stop(ctx.currentTime + dur);
   } catch {}
 }
+// ── Custom SFX files ─────────────────────────────────────────────────────────
+// Place WAV or MP3 clips in a  sfx/  folder next to index.html.
+// Any file that is present replaces its generated fallback automatically.
+// Missing files are silently ignored — generated beeps play instead.
+const SFX_FILES = {
+  correct: 'sfx/deal-damage.wav',   // player correctly names a note
+  wrong:   'sfx/take-damage.wav',   // wrong card played
+  hit:     'sfx/take-damage.wav',   // timer ran out
+  defeat:  'sfx/enemy-defeat.wav',  // enemy dies
+  boss:    'sfx/boss-hit.wav',      // hit on the Dragon King
+};
+const _sfxCache = {};
+
+function initSfx() {
+  for (const [type, path] of Object.entries(SFX_FILES)) {
+    const a = new Audio(path);
+    a.preload = 'auto';
+    a.addEventListener('error', () => delete _sfxCache[type], { once: true });
+    _sfxCache[type] = a;
+  }
+}
+
 function sfx(type) {
+  const cached = _sfxCache[type];
+  if (cached && cached.readyState >= 2) {
+    const clip = cached.cloneNode();
+    clip.volume = 0.65;
+    clip.play().catch(() => sfxBeep(type));
+    return;
+  }
+  sfxBeep(type);
+}
+
+function sfxBeep(type) {
   if (type === 'correct') { beep(880, .12); setTimeout(() => beep(1100, .15), 80); }
   if (type === 'wrong')   { beep(220, .25, 'sawtooth', .15); }
   if (type === 'hit')     { beep(180, .2,  'square',   .2); }
@@ -1795,6 +1828,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderLB('lb-menu');
   document.getElementById('preview-m').innerHTML = PLAYER_SPRITES.m;
   document.getElementById('preview-f').innerHTML = PLAYER_SPRITES.f;
+  initSfx();
 });
 
 // Music starts on first user interaction (browser autoplay policy)
