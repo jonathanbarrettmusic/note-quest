@@ -600,6 +600,26 @@
     .avatar-card-class { font-size: .72rem; color: var(--text-dim); }
     .avatar-stats { font-size: .62rem; color: var(--text-dim); margin-top: .35rem; opacity: .8; }
     #btn-begin:disabled { opacity: .35; cursor: not-allowed; }
+
+    /* ════════════ MODE SELECT ════════════ */
+    #screen-mode {
+      align-items: center;
+      padding: 1.5rem 1.25rem;
+      gap: 1.1rem;
+    }
+    .mode-grid { display: flex; flex-direction: column; gap: .75rem; width: 100%; }
+    .mode-card {
+      background: rgba(255,255,255,.06);
+      border: 2px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      transition: transform .14s, border-color .15s;
+    }
+    .mode-card:active  { transform: scale(.98); }
+    .mode-card:hover   { border-color: var(--gold); }
+    .mode-card-name    { font-size: 1rem; font-weight: 800; margin-bottom: .25rem; }
+    .mode-card-desc    { font-size: .78rem; color: var(--text-dim); }
   </style>
 </head>
 <body>
@@ -613,9 +633,18 @@
     <div class="game-title">Note Quest</div>
     <div class="game-sub">Battle enemies by reading music!</div>
   </div>
-  <button class="btn btn-primary" onclick="showCharacterSelect()">▶ Start Game</button>
+  <button class="btn btn-primary" onclick="showModeSelect()">▶ Start Game</button>
   <div class="lb-title">🏆 Leaderboard</div>
   <div id="lb-menu" style="width:100%"></div>
+</div>
+
+<!-- ═══ MODE SELECT ═══ -->
+<div id="screen-mode" class="screen">
+  <div class="logo">⚔️🎵</div>
+  <div class="game-title" style="font-size:1.7rem">Choose your quest</div>
+  <div class="game-sub">What will you master?</div>
+  <div class="mode-grid" id="mode-grid"></div>
+  <button class="btn btn-ghost" onclick="showMenu()">← Back</button>
 </div>
 
 <!-- ═══ CHARACTER SELECT ═══ -->
@@ -1220,6 +1249,198 @@ const WAVES = [
   { name:'DRAGON KING',   emoji:'🐉', hp:800,  atk:50, bonus:10000,time:2500, clefs:['treble','bass','alto'], acc:true,  env:'lair',   isBoss:true, bossPhase:2 },
 ];
 
+// ════════════════════════════════════════════════════════════
+//  INTERVAL POOL
+// ════════════════════════════════════════════════════════════
+const INTERVAL_POOL = [
+  // ── Treble clef ──────────────────────────────────────────
+  { lower:'c/4', upper:'d/4', clef:'treble', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'c/4', upper:'e/4', clef:'treble', lAcc:null, uAcc:null, simple:'3rd', quality:'Maj 3rd' },
+  { lower:'c/4', upper:'f/4', clef:'treble', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'c/4', upper:'g/4', clef:'treble', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'c/4', upper:'a/4', clef:'treble', lAcc:null, uAcc:null, simple:'6th', quality:'Maj 6th' },
+  { lower:'c/4', upper:'b/4', clef:'treble', lAcc:null, uAcc:null, simple:'7th', quality:'Maj 7th' },
+  { lower:'c/4', upper:'c/5', clef:'treble', lAcc:null, uAcc:null, simple:'8ve', quality:'Per 8ve' },
+  { lower:'d/4', upper:'e/4', clef:'treble', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'d/4', upper:'f/4', clef:'treble', lAcc:null, uAcc:null, simple:'3rd', quality:'Min 3rd' },
+  { lower:'d/4', upper:'g/4', clef:'treble', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'d/4', upper:'a/4', clef:'treble', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'d/4', upper:'b/4', clef:'treble', lAcc:null, uAcc:null, simple:'6th', quality:'Maj 6th' },
+  { lower:'d/4', upper:'c/5', clef:'treble', lAcc:null, uAcc:null, simple:'7th', quality:'Min 7th' },
+  { lower:'d/4', upper:'d/5', clef:'treble', lAcc:null, uAcc:null, simple:'8ve', quality:'Per 8ve' },
+  { lower:'e/4', upper:'f/4', clef:'treble', lAcc:null, uAcc:null, simple:'2nd', quality:'Min 2nd' },
+  { lower:'e/4', upper:'g/4', clef:'treble', lAcc:null, uAcc:null, simple:'3rd', quality:'Min 3rd' },
+  { lower:'e/4', upper:'a/4', clef:'treble', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'e/4', upper:'b/4', clef:'treble', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'e/4', upper:'c/5', clef:'treble', lAcc:null, uAcc:null, simple:'6th', quality:'Min 6th' },
+  { lower:'e/4', upper:'d/5', clef:'treble', lAcc:null, uAcc:null, simple:'7th', quality:'Min 7th' },
+  { lower:'e/4', upper:'e/5', clef:'treble', lAcc:null, uAcc:null, simple:'8ve', quality:'Per 8ve' },
+  { lower:'f/4', upper:'g/4', clef:'treble', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'f/4', upper:'a/4', clef:'treble', lAcc:null, uAcc:null, simple:'3rd', quality:'Maj 3rd' },
+  { lower:'f/4', upper:'b/4', clef:'treble', lAcc:null, uAcc:null, simple:'4th', quality:'Aug 4th' },
+  { lower:'f/4', upper:'c/5', clef:'treble', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'f/4', upper:'d/5', clef:'treble', lAcc:null, uAcc:null, simple:'6th', quality:'Maj 6th' },
+  { lower:'f/4', upper:'e/5', clef:'treble', lAcc:null, uAcc:null, simple:'7th', quality:'Maj 7th' },
+  { lower:'f/4', upper:'f/5', clef:'treble', lAcc:null, uAcc:null, simple:'8ve', quality:'Per 8ve' },
+  { lower:'g/4', upper:'a/4', clef:'treble', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'g/4', upper:'b/4', clef:'treble', lAcc:null, uAcc:null, simple:'3rd', quality:'Maj 3rd' },
+  { lower:'g/4', upper:'c/5', clef:'treble', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'g/4', upper:'d/5', clef:'treble', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'g/4', upper:'e/5', clef:'treble', lAcc:null, uAcc:null, simple:'6th', quality:'Maj 6th' },
+  { lower:'g/4', upper:'f/5', clef:'treble', lAcc:null, uAcc:null, simple:'7th', quality:'Min 7th' },
+  { lower:'g/4', upper:'g/5', clef:'treble', lAcc:null, uAcc:null, simple:'8ve', quality:'Per 8ve' },
+  { lower:'a/4', upper:'b/4', clef:'treble', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'a/4', upper:'c/5', clef:'treble', lAcc:null, uAcc:null, simple:'3rd', quality:'Min 3rd' },
+  { lower:'a/4', upper:'d/5', clef:'treble', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'a/4', upper:'e/5', clef:'treble', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'b/4', upper:'c/5', clef:'treble', lAcc:null, uAcc:null, simple:'2nd', quality:'Min 2nd' },
+  { lower:'b/4', upper:'d/5', clef:'treble', lAcc:null, uAcc:null, simple:'3rd', quality:'Min 3rd' },
+  { lower:'b/4', upper:'e/5', clef:'treble', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'b/4', upper:'f/5', clef:'treble', lAcc:null, uAcc:null, simple:'5th', quality:'Dim 5th' },
+  // ── Bass clef ────────────────────────────────────────────
+  { lower:'g/2', upper:'a/2', clef:'bass', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'g/2', upper:'b/2', clef:'bass', lAcc:null, uAcc:null, simple:'3rd', quality:'Maj 3rd' },
+  { lower:'g/2', upper:'c/3', clef:'bass', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'g/2', upper:'d/3', clef:'bass', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'g/2', upper:'e/3', clef:'bass', lAcc:null, uAcc:null, simple:'6th', quality:'Maj 6th' },
+  { lower:'g/2', upper:'f/3', clef:'bass', lAcc:null, uAcc:null, simple:'7th', quality:'Min 7th' },
+  { lower:'g/2', upper:'g/3', clef:'bass', lAcc:null, uAcc:null, simple:'8ve', quality:'Per 8ve' },
+  { lower:'a/2', upper:'b/2', clef:'bass', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'a/2', upper:'c/3', clef:'bass', lAcc:null, uAcc:null, simple:'3rd', quality:'Min 3rd' },
+  { lower:'a/2', upper:'d/3', clef:'bass', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'a/2', upper:'e/3', clef:'bass', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'a/2', upper:'f/3', clef:'bass', lAcc:null, uAcc:null, simple:'6th', quality:'Min 6th' },
+  { lower:'b/2', upper:'c/3', clef:'bass', lAcc:null, uAcc:null, simple:'2nd', quality:'Min 2nd' },
+  { lower:'b/2', upper:'d/3', clef:'bass', lAcc:null, uAcc:null, simple:'3rd', quality:'Min 3rd' },
+  { lower:'b/2', upper:'e/3', clef:'bass', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'c/3', upper:'d/3', clef:'bass', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'c/3', upper:'e/3', clef:'bass', lAcc:null, uAcc:null, simple:'3rd', quality:'Maj 3rd' },
+  { lower:'c/3', upper:'f/3', clef:'bass', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'c/3', upper:'g/3', clef:'bass', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'c/3', upper:'a/3', clef:'bass', lAcc:null, uAcc:null, simple:'6th', quality:'Maj 6th' },
+  { lower:'c/3', upper:'b/3', clef:'bass', lAcc:null, uAcc:null, simple:'7th', quality:'Maj 7th' },
+  { lower:'c/3', upper:'c/4', clef:'bass', lAcc:null, uAcc:null, simple:'8ve', quality:'Per 8ve' },
+  { lower:'d/3', upper:'e/3', clef:'bass', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'d/3', upper:'f/3', clef:'bass', lAcc:null, uAcc:null, simple:'3rd', quality:'Min 3rd' },
+  { lower:'d/3', upper:'g/3', clef:'bass', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'d/3', upper:'a/3', clef:'bass', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'e/3', upper:'f/3', clef:'bass', lAcc:null, uAcc:null, simple:'2nd', quality:'Min 2nd' },
+  { lower:'e/3', upper:'g/3', clef:'bass', lAcc:null, uAcc:null, simple:'3rd', quality:'Min 3rd' },
+  { lower:'e/3', upper:'a/3', clef:'bass', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'f/3', upper:'g/3', clef:'bass', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'f/3', upper:'a/3', clef:'bass', lAcc:null, uAcc:null, simple:'3rd', quality:'Maj 3rd' },
+  { lower:'f/3', upper:'b/3', clef:'bass', lAcc:null, uAcc:null, simple:'4th', quality:'Aug 4th' },
+  { lower:'f/3', upper:'c/4', clef:'bass', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'g/3', upper:'a/3', clef:'bass', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'g/3', upper:'b/3', clef:'bass', lAcc:null, uAcc:null, simple:'3rd', quality:'Maj 3rd' },
+  { lower:'g/3', upper:'c/4', clef:'bass', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  // ── Alto clef ────────────────────────────────────────────
+  { lower:'f/3', upper:'g/3', clef:'alto', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'f/3', upper:'a/3', clef:'alto', lAcc:null, uAcc:null, simple:'3rd', quality:'Maj 3rd' },
+  { lower:'f/3', upper:'b/3', clef:'alto', lAcc:null, uAcc:null, simple:'4th', quality:'Aug 4th' },
+  { lower:'f/3', upper:'c/4', clef:'alto', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'g/3', upper:'a/3', clef:'alto', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'g/3', upper:'b/3', clef:'alto', lAcc:null, uAcc:null, simple:'3rd', quality:'Maj 3rd' },
+  { lower:'g/3', upper:'c/4', clef:'alto', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'g/3', upper:'d/4', clef:'alto', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'a/3', upper:'b/3', clef:'alto', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'a/3', upper:'c/4', clef:'alto', lAcc:null, uAcc:null, simple:'3rd', quality:'Min 3rd' },
+  { lower:'a/3', upper:'d/4', clef:'alto', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'a/3', upper:'e/4', clef:'alto', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'b/3', upper:'c/4', clef:'alto', lAcc:null, uAcc:null, simple:'2nd', quality:'Min 2nd' },
+  { lower:'b/3', upper:'d/4', clef:'alto', lAcc:null, uAcc:null, simple:'3rd', quality:'Min 3rd' },
+  { lower:'c/4', upper:'d/4', clef:'alto', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'c/4', upper:'e/4', clef:'alto', lAcc:null, uAcc:null, simple:'3rd', quality:'Maj 3rd' },
+  { lower:'c/4', upper:'f/4', clef:'alto', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  { lower:'c/4', upper:'g/4', clef:'alto', lAcc:null, uAcc:null, simple:'5th', quality:'Per 5th' },
+  { lower:'d/4', upper:'e/4', clef:'alto', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
+  { lower:'d/4', upper:'f/4', clef:'alto', lAcc:null, uAcc:null, simple:'3rd', quality:'Min 3rd' },
+  { lower:'d/4', upper:'g/4', clef:'alto', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+];
+
+// ════════════════════════════════════════════════════════════
+//  INTERVAL WAVES
+// ════════════════════════════════════════════════════════════
+const INTERVAL_WAVES = [
+  { name:'Note Goblin',   hp:120,  atk:10, bonus:250,  time:10000, clefs:['treble'],               quality:false, env:'forest'  },
+  { name:'Goblin Brute',  hp:200,  atk:12, bonus:400,  time:9500,  clefs:['treble'],               quality:false, env:'forest'  },
+  { name:'Clef Bandit',   hp:260,  atk:15, bonus:600,  time:9000,  clefs:['treble'],               quality:false, env:'town'    },
+  { name:'Bass Troll',    hp:320,  atk:18, bonus:800,  time:8000,  clefs:['treble','bass'],        quality:false, env:'cave'    },
+  { name:'Cave Ogre',     hp:400,  atk:20, bonus:1000, time:7500,  clefs:['treble','bass'],        quality:false, env:'cave'    },
+  { name:'Sharp Witch',   hp:380,  atk:22, bonus:1100, time:7000,  clefs:['treble','bass'],        quality:true,  env:'darkwood'},
+  { name:'Coven Elder',   hp:460,  atk:24, bonus:1400, time:6500,  clefs:['treble','bass'],        quality:true,  env:'darkwood'},
+  { name:'Alto Phantom',  hp:500,  atk:26, bonus:1600, time:6000,  clefs:['treble','bass','alto'], quality:true,  env:'ruins'   },
+  { name:'Dark Maestro',  hp:560,  atk:28, bonus:2000, time:5500,  clefs:['treble','bass','alto'], quality:true,  env:'castle'  },
+  { name:'Grand Maestro', hp:640,  atk:30, bonus:2500, time:5000,  clefs:['treble','bass','alto'], quality:true,  env:'castle'  },
+  { name:'Shadow Dragon', hp:740,  atk:34, bonus:3500, time:4500,  clefs:['treble','bass','alto'], quality:true,  env:'lair'    },
+  { name:'DRAGON KING',   hp:1000, atk:38, bonus:5000, time:4200,  clefs:['treble','bass','alto'], quality:true,  env:'lair',   isBoss:true, bossPhase:1 },
+  { name:'DRAGON KING',   hp:600,  atk:46, bonus:10000,time:3000,  clefs:['treble','bass','alto'], quality:true,  env:'lair',   isBoss:true, bossPhase:2 },
+];
+
+// ════════════════════════════════════════════════════════════
+//  NOTE READING MODULE
+// ════════════════════════════════════════════════════════════
+const NOTE_READING_MODULE = {
+  id: 'notes',
+  name: 'Note Reading',
+  description: 'Identify notes on treble, bass & alto clef',
+  waves: WAVES,
+
+  answerPool(wave) {
+    return wave.acc
+      ? [...ALL_NAMES.natural, ...ALL_NAMES.accidental]
+      : [...ALL_NAMES.natural];
+  },
+
+  pickQuestion(hand, wave) {
+    const candidates = [];
+    for (const clef of wave.clefs) {
+      const pool = [...NOTE_POOL[clef].natural, ...(wave.acc ? NOTE_POOL[clef].accidental : [])];
+      for (const note of pool) {
+        if (hand.includes(note.name)) candidates.push({ ...note, clef, answer: note.name });
+      }
+    }
+    return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
+  },
+
+  render(question) { renderNote(question.clef, question); },
+
+  check(question, name) { return name === question.answer; },
+};
+
+// ════════════════════════════════════════════════════════════
+//  INTERVALS MODULE
+// ════════════════════════════════════════════════════════════
+const INTERVALS_MODULE = {
+  id: 'intervals',
+  name: 'Intervals',
+  description: 'Identify harmonic intervals by number and quality',
+  waves: INTERVAL_WAVES,
+
+  answerPool(wave) {
+    return wave.quality
+      ? ['Min 2nd','Maj 2nd','Min 3rd','Maj 3rd','Per 4th','Aug 4th','Dim 5th','Per 5th','Min 6th','Maj 6th','Min 7th','Maj 7th','Per 8ve']
+      : ['2nd','3rd','4th','5th','6th','7th','8ve'];
+  },
+
+  pickQuestion(hand, wave) {
+    const candidates = [];
+    for (const clef of wave.clefs) {
+      for (const q of INTERVAL_POOL.filter(e => e.clef === clef)) {
+        const answer = wave.quality ? q.quality : q.simple;
+        if (hand.includes(answer)) candidates.push({ ...q, answer });
+      }
+    }
+    return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
+  },
+
+  render(question) { renderInterval(question); },
+
+  check(question, name) { return name === question.answer; },
+};
+
+const MODULES = [NOTE_READING_MODULE, INTERVALS_MODULE];
+
 const PLAYER_DAMAGE = 30;
 
 // ════════════════════════════════════════════════════════════
@@ -1229,23 +1450,24 @@ let gs = {};  // game state
 
 function resetState() {
   gs = {
-    wave:        0,
-    playerHp:    100,
-    playerMaxHp: 100,
-    score:       0,
-    combo:       0,
-    comboBonus:  1,
-    enemyHp:     0,
-    enemyMaxHp:  0,
-    currentNote: null,   // { name, key, acc, clef }
-    playerAvatar: null,
-    hand:        [],
-    newCardIdx:  -1,
-    timerStart:  0,
-    timerLimit:  7000,
-    timerRaf:    null,
-    answered:    false,
-    running:     false,
+    wave:            0,
+    playerHp:        100,
+    playerMaxHp:     100,
+    score:           0,
+    combo:           0,
+    comboBonus:      1,
+    enemyHp:         0,
+    enemyMaxHp:      0,
+    currentQuestion: null,
+    module:          null,
+    playerAvatar:    null,
+    hand:            [],
+    newCardIdx:      -1,
+    timerStart:      0,
+    timerLimit:      7000,
+    timerRaf:        null,
+    answered:        false,
+    running:         false,
   };
 }
 
@@ -1341,25 +1563,56 @@ function renderNote(clef, noteData) {
     clef === 'treble' ? '𝄞 Treble Clef' : clef === 'bass' ? '𝄢 Bass Clef' : '𝄡 Alto Clef';
 }
 
+function renderInterval(question) {
+  const container = document.getElementById('staff-container');
+  container.innerHTML = '';
+
+  const W = Math.min(container.parentElement.clientWidth - 32, 380);
+  const H = 120;
+
+  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+  renderer.resize(W, H);
+  const ctx = renderer.getContext();
+  ctx.setFont('Arial', 12);
+
+  const stave = new VF.Stave(10, 18, W - 20);
+  stave.addClef(question.clef);
+  stave.setContext(ctx).draw();
+
+  const note = new VF.StaveNote({
+    keys: [question.lower, question.upper],
+    duration: 'w',
+    clef: question.clef,
+  });
+  if (question.lAcc) note.addModifier(new VF.Accidental(question.lAcc), 0);
+  if (question.uAcc) note.addModifier(new VF.Accidental(question.uAcc), 1);
+
+  const voice = new VF.Voice({ numBeats: 4, beatValue: 4 }).setStrict(false);
+  voice.addTickables([note]);
+  new VF.Formatter().joinVoices([voice]).format([voice], W - 80);
+  voice.draw(ctx, stave);
+
+  document.getElementById('clef-label').textContent =
+    question.clef === 'treble' ? '𝄞 Treble Clef'
+    : question.clef === 'bass' ? '𝄢 Bass Clef'
+    : '𝄡 Alto Clef';
+}
+
 // ════════════════════════════════════════════════════════════
 //  HAND / CARDS
 // ════════════════════════════════════════════════════════════
 // ── Persistent hand ─────────────────────────────────────────────────────────
 
-function getNamePool() {
-  return WAVES[gs.wave].acc
-    ? [...ALL_NAMES.natural, ...ALL_NAMES.accidental]
-    : [...ALL_NAMES.natural];
-}
-
 function initHand() {
-  const pool = [...getNamePool()].sort(() => Math.random() - .5);
+  const wave = gs.module.waves[gs.wave];
+  const pool = [...gs.module.answerPool(wave)].sort(() => Math.random() - .5);
   gs.hand = pool.slice(0, 5);
   gs.newCardIdx = -1;
 }
 
 function drawCard() {
-  const pool = getNamePool();
+  const wave = gs.module.waves[gs.wave];
+  const pool = gs.module.answerPool(wave);
   const available = pool.filter(n => !gs.hand.includes(n));
   const src = available.length ? available : pool;
   return src[Math.floor(Math.random() * src.length)];
@@ -1370,18 +1623,6 @@ function replaceCard(name) {
   if (idx !== -1) { gs.hand[idx] = drawCard(); gs.newCardIdx = idx; }
 }
 
-function pickNoteFromHand() {
-  const wave = WAVES[gs.wave];
-  const candidates = [];
-  for (const clef of wave.clefs) {
-    const pool = [...NOTE_POOL[clef].natural, ...(wave.acc ? NOTE_POOL[clef].accidental : [])];
-    for (const note of pool) {
-      if (gs.hand.includes(note.name)) candidates.push({ ...note, clef });
-    }
-  }
-  if (!candidates.length) { initHand(); return pickNoteFromHand(); }
-  return candidates[Math.floor(Math.random() * candidates.length)];
-}
 
 function renderHand() {
   const handEl = document.getElementById('hand');
@@ -1442,9 +1683,12 @@ function timeBonus() {
 function newQuestion() {
   if (!gs.running) return;
   gs.answered = false;
-  gs.currentNote = pickNoteFromHand();
+  const wave = gs.module.waves[gs.wave];
+  const question = gs.module.pickQuestion(gs.hand, wave);
+  if (!question) { initHand(); return newQuestion(); }
+  gs.currentQuestion = question;
   renderHand();
-  renderNote(gs.currentNote.clef, gs.currentNote);
+  gs.module.render(question);
   clearFeedback();
   startTimer();
 }
@@ -1453,8 +1697,7 @@ function playCard(name, cardEl) {
   if (gs.answered || !gs.running) return;
   gs.answered = true;
   stopTimer();
-
-  if (name === gs.currentNote.name) {
+  if (gs.module.check(gs.currentQuestion, name)) {
     handleCorrect(cardEl);
   } else {
     handleWrong(name, cardEl);
@@ -1474,7 +1717,7 @@ function handleCorrect(cardEl) {
   // Damage enemy
   const dmg = Math.round(PLAYER_DAMAGE * comboMult);
   gs.enemyHp = Math.max(0, gs.enemyHp - dmg);
-  replaceCard(gs.currentNote.name);
+  replaceCard(gs.currentQuestion.answer);
 
   showFeedback(`+${pts}`, 'correct');
   spawnFloater(`-${dmg}`, 'hit', document.getElementById('enemy-sprite'));
@@ -1482,7 +1725,7 @@ function handleCorrect(cardEl) {
   animatePlayerAttack();
   updateUI();
 
-  const wave = WAVES[gs.wave];
+  const wave = gs.module.waves[gs.wave];
   if (wave.isBoss) sfx('boss');
 
   if (gs.enemyHp <= 0) {
@@ -1549,7 +1792,7 @@ function animatePlayerHurt() {
 }
 
 function applyEnemyAttack() {
-  const wave = WAVES[gs.wave];
+  const wave = gs.module.waves[gs.wave];
   gs.playerHp = Math.max(0, gs.playerHp - wave.atk);
   document.getElementById('player-hp-bar').classList.add('danger');
   spawnFloater(`-${wave.atk}`, 'dmg', document.getElementById('player-hp-text'));
@@ -1565,7 +1808,7 @@ function applyEnemyAttack() {
 
 function enemyDefeated() {
   sfx('defeat');
-  const wave = WAVES[gs.wave];
+  const wave = gs.module.waves[gs.wave];
   gs.score += wave.bonus;
 
   if (wave.bossPhase === 1) {
@@ -1581,7 +1824,7 @@ function enemyDefeated() {
   }
 
   gs.wave++;
-  if (gs.wave >= WAVES.length) { victory(); return; }
+  if (gs.wave >= gs.module.waves.length) { victory(); return; }
 
   showFeedback('⚔️ Enemy defeated!', 'correct');
   setTimeout(() => {
@@ -1594,7 +1837,7 @@ function enemyDefeated() {
 //  WAVE MANAGEMENT
 // ════════════════════════════════════════════════════════════
 function startWave() {
-  const wave = WAVES[gs.wave];
+  const wave = gs.module.waves[gs.wave];
   gs.enemyHp    = wave.hp;
   gs.enemyMaxHp = wave.hp;
   gs.timerLimit = wave.time;
@@ -1619,8 +1862,6 @@ function startWave() {
 //  UI UPDATES
 // ════════════════════════════════════════════════════════════
 function updateUI() {
-  const wave = WAVES[gs.wave];
-
   // Enemy HP
   const enemyPct = gs.enemyHp / gs.enemyMaxHp * 100;
   document.getElementById('enemy-hp-bar').style.width = enemyPct + '%';
@@ -1719,9 +1960,22 @@ function setEnvironment(env) {
   setTimeout(() => { bg.className = `env-${env}`; bg.style.opacity = '1'; }, 450);
 }
 
-function showCharacterSelect() {
+function showModeSelect() {
+  const grid = document.getElementById('mode-grid');
+  grid.innerHTML = MODULES.map(m => `
+    <div class="mode-card" onclick="selectModule('${m.id}')">
+      <div class="mode-card-name">${m.name}</div>
+      <div class="mode-card-desc">${m.description}</div>
+    </div>`).join('');
+  showScreen('mode');
+}
+
+function selectModule(id) {
+  gs.module = MODULES.find(m => m.id === id);
   showScreen('select');
 }
+
+function showCharacterSelect() { showModeSelect(); }
 
 function selectAvatar(gender) {
   gs.playerAvatar = gender;
@@ -1734,9 +1988,11 @@ function selectAvatar(gender) {
 
 function beginQuest() {
   const avatar = gs.playerAvatar;
-  if (!avatar) return;
+  const module = gs.module;
+  if (!avatar || !module) return;
   resetState();
   gs.playerAvatar = avatar;
+  gs.module = module;
   const stats = AVATAR_STATS[avatar];
   gs.playerHp    = stats.hp;
   gs.playerMaxHp = stats.hp;
@@ -1754,7 +2010,7 @@ function gameOver() {
   playMusic('menu');
   document.getElementById('go-score').textContent = gs.score.toLocaleString();
   document.getElementById('go-summary').textContent =
-    `Reached Wave ${gs.wave + 1}: ${WAVES[gs.wave].name}`;
+    `Reached Wave ${gs.wave + 1}: ${gs.module.waves[gs.wave].name}`;
   showScreen('gameover');
 }
 
