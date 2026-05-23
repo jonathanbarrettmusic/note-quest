@@ -203,6 +203,14 @@
     }
     .card-name.sharp   { color: #2563eb; }
     .card-name.flat    { color: #7c3aed; }
+    .card-name.interval {
+      font-size: .72rem; white-space: nowrap; letter-spacing: -.01em;
+    }
+    .card-name.perfect    { color: #2563eb; }
+    .card-name.major      { color: #16a34a; }
+    .card-name.minor      { color: #ea580c; }
+    .card-name.augmented  { color: #b45309; }
+    .card-name.diminished { color: #dc2626; }
     .card-suit { font-size: .95rem; opacity: .4; }
     .card-corner {
       position: absolute; top: 4px; left: 6px;
@@ -1356,6 +1364,52 @@ const INTERVAL_POOL = [
   { lower:'d/4', upper:'e/4', clef:'alto', lAcc:null, uAcc:null, simple:'2nd', quality:'Maj 2nd' },
   { lower:'d/4', upper:'f/4', clef:'alto', lAcc:null, uAcc:null, simple:'3rd', quality:'Min 3rd' },
   { lower:'d/4', upper:'g/4', clef:'alto', lAcc:null, uAcc:null, simple:'4th', quality:'Per 4th' },
+  // ── Treble · accidentals ─────────────────────────────────
+  { lower:'c/4', upper:'e/4', clef:'treble', lAcc:null, uAcc:'b', simple:'3rd', quality:'Min 3rd' },
+  { lower:'f/4', upper:'a/4', clef:'treble', lAcc:null, uAcc:'b', simple:'3rd', quality:'Min 3rd' },
+  { lower:'g/4', upper:'b/4', clef:'treble', lAcc:null, uAcc:'b', simple:'3rd', quality:'Min 3rd' },
+  { lower:'d/4', upper:'f/4', clef:'treble', lAcc:null, uAcc:'#', simple:'3rd', quality:'Maj 3rd' },
+  { lower:'a/4', upper:'c/5', clef:'treble', lAcc:null, uAcc:'#', simple:'3rd', quality:'Maj 3rd' },
+  { lower:'e/4', upper:'g/4', clef:'treble', lAcc:null, uAcc:'#', simple:'3rd', quality:'Maj 3rd' },
+  { lower:'f/4', upper:'b/4', clef:'treble', lAcc:null, uAcc:'b', simple:'4th', quality:'Per 4th' },
+  { lower:'c/4', upper:'f/4', clef:'treble', lAcc:null, uAcc:'#', simple:'4th', quality:'Aug 4th' },
+  { lower:'d/4', upper:'g/4', clef:'treble', lAcc:null, uAcc:'#', simple:'4th', quality:'Aug 4th' },
+  { lower:'g/4', upper:'c/5', clef:'treble', lAcc:null, uAcc:'#', simple:'4th', quality:'Aug 4th' },
+  { lower:'c/4', upper:'g/4', clef:'treble', lAcc:null, uAcc:'b', simple:'5th', quality:'Dim 5th' },
+  { lower:'g/4', upper:'d/5', clef:'treble', lAcc:null, uAcc:'b', simple:'5th', quality:'Dim 5th' },
+  { lower:'b/4', upper:'f/5', clef:'treble', lAcc:null, uAcc:'#', simple:'5th', quality:'Per 5th' },
+  { lower:'c/4', upper:'a/4', clef:'treble', lAcc:null, uAcc:'b', simple:'6th', quality:'Min 6th' },
+  { lower:'d/4', upper:'b/4', clef:'treble', lAcc:null, uAcc:'b', simple:'6th', quality:'Min 6th' },
+  { lower:'g/4', upper:'e/5', clef:'treble', lAcc:null, uAcc:'b', simple:'6th', quality:'Min 6th' },
+  { lower:'a/4', upper:'f/5', clef:'treble', lAcc:null, uAcc:'#', simple:'6th', quality:'Maj 6th' },
+  { lower:'e/4', upper:'c/5', clef:'treble', lAcc:null, uAcc:'#', simple:'6th', quality:'Maj 6th' },
+  { lower:'c/4', upper:'b/4', clef:'treble', lAcc:null, uAcc:'b', simple:'7th', quality:'Min 7th' },
+  { lower:'f/4', upper:'e/5', clef:'treble', lAcc:null, uAcc:'b', simple:'7th', quality:'Min 7th' },
+  { lower:'g/4', upper:'f/5', clef:'treble', lAcc:null, uAcc:'#', simple:'7th', quality:'Maj 7th' },
+  // ── Bass · accidentals ───────────────────────────────────
+  { lower:'c/3', upper:'e/3', clef:'bass', lAcc:null, uAcc:'b', simple:'3rd', quality:'Min 3rd' },
+  { lower:'f/3', upper:'a/3', clef:'bass', lAcc:null, uAcc:'b', simple:'3rd', quality:'Min 3rd' },
+  { lower:'g/3', upper:'b/3', clef:'bass', lAcc:null, uAcc:'b', simple:'3rd', quality:'Min 3rd' },
+  { lower:'d/3', upper:'f/3', clef:'bass', lAcc:null, uAcc:'#', simple:'3rd', quality:'Maj 3rd' },
+  { lower:'a/2', upper:'c/3', clef:'bass', lAcc:null, uAcc:'#', simple:'3rd', quality:'Maj 3rd' },
+  { lower:'f/3', upper:'b/3', clef:'bass', lAcc:null, uAcc:'b', simple:'4th', quality:'Per 4th' },
+  { lower:'c/3', upper:'f/3', clef:'bass', lAcc:null, uAcc:'#', simple:'4th', quality:'Aug 4th' },
+  { lower:'d/3', upper:'g/3', clef:'bass', lAcc:null, uAcc:'#', simple:'4th', quality:'Aug 4th' },
+  { lower:'c/3', upper:'g/3', clef:'bass', lAcc:null, uAcc:'b', simple:'5th', quality:'Dim 5th' },
+  { lower:'g/2', upper:'d/3', clef:'bass', lAcc:null, uAcc:'b', simple:'5th', quality:'Dim 5th' },
+  { lower:'c/3', upper:'a/3', clef:'bass', lAcc:null, uAcc:'b', simple:'6th', quality:'Min 6th' },
+  { lower:'d/3', upper:'b/3', clef:'bass', lAcc:null, uAcc:'b', simple:'6th', quality:'Min 6th' },
+  { lower:'g/2', upper:'e/3', clef:'bass', lAcc:null, uAcc:'b', simple:'6th', quality:'Min 6th' },
+  { lower:'a/2', upper:'f/3', clef:'bass', lAcc:null, uAcc:'#', simple:'6th', quality:'Maj 6th' },
+  { lower:'c/3', upper:'b/3', clef:'bass', lAcc:null, uAcc:'b', simple:'7th', quality:'Min 7th' },
+  // ── Alto · accidentals ───────────────────────────────────
+  { lower:'c/4', upper:'e/4', clef:'alto', lAcc:null, uAcc:'b', simple:'3rd', quality:'Min 3rd' },
+  { lower:'g/3', upper:'b/3', clef:'alto', lAcc:null, uAcc:'b', simple:'3rd', quality:'Min 3rd' },
+  { lower:'a/3', upper:'c/4', clef:'alto', lAcc:null, uAcc:'#', simple:'3rd', quality:'Maj 3rd' },
+  { lower:'f/3', upper:'b/3', clef:'alto', lAcc:null, uAcc:'b', simple:'4th', quality:'Per 4th' },
+  { lower:'c/4', upper:'f/4', clef:'alto', lAcc:null, uAcc:'#', simple:'4th', quality:'Aug 4th' },
+  { lower:'c/4', upper:'a/4', clef:'alto', lAcc:null, uAcc:'b', simple:'6th', quality:'Min 6th' },
+  { lower:'d/4', upper:'b/4', clef:'alto', lAcc:null, uAcc:'b', simple:'6th', quality:'Min 6th' },
 ];
 
 // ════════════════════════════════════════════════════════════
@@ -1367,14 +1421,14 @@ const INTERVAL_WAVES = [
   { name:'Clef Bandit',   hp:260,  atk:15, bonus:600,  time:9000,  clefs:['treble'],               quality:false, env:'town'    },
   { name:'Bass Troll',    hp:320,  atk:18, bonus:800,  time:8000,  clefs:['treble','bass'],        quality:false, env:'cave'    },
   { name:'Cave Ogre',     hp:400,  atk:20, bonus:1000, time:7500,  clefs:['treble','bass'],        quality:false, env:'cave'    },
-  { name:'Sharp Witch',   hp:380,  atk:22, bonus:1100, time:7000,  clefs:['treble','bass'],        quality:true,  env:'darkwood'},
-  { name:'Coven Elder',   hp:460,  atk:24, bonus:1400, time:6500,  clefs:['treble','bass'],        quality:true,  env:'darkwood'},
-  { name:'Alto Phantom',  hp:500,  atk:26, bonus:1600, time:6000,  clefs:['treble','bass','alto'], quality:true,  env:'ruins'   },
-  { name:'Dark Maestro',  hp:560,  atk:28, bonus:2000, time:5500,  clefs:['treble','bass','alto'], quality:true,  env:'castle'  },
-  { name:'Grand Maestro', hp:640,  atk:30, bonus:2500, time:5000,  clefs:['treble','bass','alto'], quality:true,  env:'castle'  },
-  { name:'Shadow Dragon', hp:740,  atk:34, bonus:3500, time:4500,  clefs:['treble','bass','alto'], quality:true,  env:'lair'    },
-  { name:'DRAGON KING',   hp:1000, atk:38, bonus:5000, time:4200,  clefs:['treble','bass','alto'], quality:true,  env:'lair',   isBoss:true, bossPhase:1 },
-  { name:'DRAGON KING',   hp:600,  atk:46, bonus:10000,time:3000,  clefs:['treble','bass','alto'], quality:true,  env:'lair',   isBoss:true, bossPhase:2 },
+  { name:'Sharp Witch',   hp:380,  atk:22, bonus:1100, time:7000,  clefs:['treble','bass'],        quality:true,  acc:false, env:'darkwood'},
+  { name:'Coven Elder',   hp:460,  atk:24, bonus:1400, time:6500,  clefs:['treble','bass'],        quality:true,  acc:false, env:'darkwood'},
+  { name:'Alto Phantom',  hp:500,  atk:26, bonus:1600, time:6000,  clefs:['treble','bass','alto'], quality:true,  acc:true,  env:'ruins'   },
+  { name:'Dark Maestro',  hp:560,  atk:28, bonus:2000, time:5500,  clefs:['treble','bass','alto'], quality:true,  acc:true,  env:'castle'  },
+  { name:'Grand Maestro', hp:640,  atk:30, bonus:2500, time:5000,  clefs:['treble','bass','alto'], quality:true,  acc:true,  env:'castle'  },
+  { name:'Shadow Dragon', hp:740,  atk:34, bonus:3500, time:4500,  clefs:['treble','bass','alto'], quality:true,  acc:true,  env:'lair'    },
+  { name:'DRAGON KING',   hp:1000, atk:38, bonus:5000, time:4200,  clefs:['treble','bass','alto'], quality:true,  acc:true,  env:'lair',   isBoss:true, bossPhase:1 },
+  { name:'DRAGON KING',   hp:600,  atk:46, bonus:10000,time:3000,  clefs:['treble','bass','alto'], quality:true,  acc:true,  env:'lair',   isBoss:true, bossPhase:2 },
 ];
 
 // ════════════════════════════════════════════════════════════
@@ -1427,6 +1481,7 @@ const INTERVALS_MODULE = {
     const candidates = [];
     for (const clef of wave.clefs) {
       for (const q of INTERVAL_POOL.filter(e => e.clef === clef)) {
+        if (!wave.acc && (q.lAcc || q.uAcc)) continue;
         const answer = wave.quality ? q.quality : q.simple;
         if (hand.includes(answer)) candidates.push({ ...q, answer });
       }
@@ -1629,9 +1684,19 @@ function renderHand() {
   handEl.innerHTML = '';
   gs.hand.forEach((name, idx) => {
     const card = document.createElement('div');
-    const isSharp = name.includes('♯');
-    const isFlat  = name.includes('♭');
-    const cls = isSharp ? 'sharp' : isFlat ? 'flat' : '';
+    let cls = '';
+    if (name.length >= 3) {
+      cls = 'interval';
+      if      (name.startsWith('Per')) cls += ' perfect';
+      else if (name.startsWith('Maj')) cls += ' major';
+      else if (name.startsWith('Min')) cls += ' minor';
+      else if (name.startsWith('Aug')) cls += ' augmented';
+      else if (name.startsWith('Dim')) cls += ' diminished';
+    } else if (name.includes('♯')) {
+      cls = 'sharp';
+    } else if (name.includes('♭')) {
+      cls = 'flat';
+    }
     card.className = 'card' + (idx === gs.newCardIdx ? ' dealing' : '');
     card.innerHTML = `
       <div class="card-corner">${name}</div>
