@@ -210,6 +210,7 @@
     .card-name.major      { color: #16a34a; }
     .card-name.minor      { color: #ea580c; }
     .card-name.augmented  { color: #b45309; }
+    .card-name.dominant   { color: #e11d48; }
     .card-name.diminished { color: #dc2626; }
     .card-suit { font-size: .95rem; opacity: .4; }
     .card-corner {
@@ -1494,7 +1495,128 @@ const INTERVALS_MODULE = {
   check(question, name) { return name === question.answer; },
 };
 
-const MODULES = [NOTE_READING_MODULE, INTERVALS_MODULE];
+// ════════════════════════════════════════════════════════════
+//  CHORD DATA POOL
+//  notes: [{k: vexflowKey, a: accidental|null}, ...]
+//  phase: 'triad' | 'seventh'   (roman/inversion added in Part 2)
+// ════════════════════════════════════════════════════════════
+const CHORD_POOL = [
+  // ── Treble · triads · natural (diatonic C major) ─────────
+  { notes:[{k:'c/4',a:null},{k:'e/4',a:null},{k:'g/4',a:null}], clef:'treble', quality:'Major',   phase:'triad' },
+  { notes:[{k:'d/4',a:null},{k:'f/4',a:null},{k:'a/4',a:null}], clef:'treble', quality:'Minor',   phase:'triad' },
+  { notes:[{k:'e/4',a:null},{k:'g/4',a:null},{k:'b/4',a:null}], clef:'treble', quality:'Minor',   phase:'triad' },
+  { notes:[{k:'f/4',a:null},{k:'a/4',a:null},{k:'c/5',a:null}], clef:'treble', quality:'Major',   phase:'triad' },
+  { notes:[{k:'g/4',a:null},{k:'b/4',a:null},{k:'d/5',a:null}], clef:'treble', quality:'Major',   phase:'triad' },
+  { notes:[{k:'a/4',a:null},{k:'c/5',a:null},{k:'e/5',a:null}], clef:'treble', quality:'Minor',   phase:'triad' },
+  { notes:[{k:'b/4',a:null},{k:'d/5',a:null},{k:'f/5',a:null}], clef:'treble', quality:'Dim',     phase:'triad' },
+  // ── Treble · triads · accidentals ────────────────────────
+  { notes:[{k:'d/4',a:null},{k:'f/4',a:'#'},{k:'a/4',a:null}], clef:'treble', quality:'Major',   phase:'triad' },
+  { notes:[{k:'e/4',a:null},{k:'g/4',a:'#'},{k:'b/4',a:null}], clef:'treble', quality:'Major',   phase:'triad' },
+  { notes:[{k:'a/4',a:null},{k:'c/5',a:'#'},{k:'e/5',a:null}], clef:'treble', quality:'Major',   phase:'triad' },
+  { notes:[{k:'b/4',a:'b'},{k:'d/5',a:null},{k:'f/5',a:null}], clef:'treble', quality:'Major',   phase:'triad' },
+  { notes:[{k:'c/4',a:null},{k:'e/4',a:'b'},{k:'g/4',a:null}], clef:'treble', quality:'Minor',   phase:'triad' },
+  { notes:[{k:'g/4',a:null},{k:'b/4',a:'b'},{k:'d/5',a:null}], clef:'treble', quality:'Minor',   phase:'triad' },
+  { notes:[{k:'b/4',a:null},{k:'d/5',a:null},{k:'f/5',a:'#'}], clef:'treble', quality:'Minor',   phase:'triad' },
+  { notes:[{k:'f/4',a:'#'},{k:'a/4',a:null},{k:'c/5',a:'#'}], clef:'treble', quality:'Minor',   phase:'triad' },
+  { notes:[{k:'c/4',a:null},{k:'e/4',a:null},{k:'g/4',a:'#'}], clef:'treble', quality:'Aug',     phase:'triad' },
+  { notes:[{k:'f/4',a:null},{k:'a/4',a:null},{k:'c/5',a:'#'}], clef:'treble', quality:'Aug',     phase:'triad' },
+  { notes:[{k:'g/4',a:null},{k:'b/4',a:null},{k:'d/5',a:'#'}], clef:'treble', quality:'Aug',     phase:'triad' },
+  { notes:[{k:'b/4',a:'b'},{k:'d/5',a:null},{k:'f/5',a:'#'}], clef:'treble', quality:'Aug',     phase:'triad' },
+  { notes:[{k:'c/4',a:'#'},{k:'e/4',a:null},{k:'g/4',a:null}], clef:'treble', quality:'Dim',     phase:'triad' },
+  { notes:[{k:'d/4',a:null},{k:'f/4',a:null},{k:'a/4',a:'b'}], clef:'treble', quality:'Dim',     phase:'triad' },
+  { notes:[{k:'e/4',a:null},{k:'g/4',a:null},{k:'b/4',a:'b'}], clef:'treble', quality:'Dim',     phase:'triad' },
+  { notes:[{k:'f/4',a:'#'},{k:'a/4',a:null},{k:'c/5',a:null}], clef:'treble', quality:'Dim',     phase:'triad' },
+  // ── Bass · triads · natural ──────────────────────────────
+  { notes:[{k:'c/3',a:null},{k:'e/3',a:null},{k:'g/3',a:null}], clef:'bass',   quality:'Major',   phase:'triad' },
+  { notes:[{k:'d/3',a:null},{k:'f/3',a:null},{k:'a/3',a:null}], clef:'bass',   quality:'Minor',   phase:'triad' },
+  { notes:[{k:'f/2',a:null},{k:'a/2',a:null},{k:'c/3',a:null}], clef:'bass',   quality:'Major',   phase:'triad' },
+  { notes:[{k:'g/2',a:null},{k:'b/2',a:null},{k:'d/3',a:null}], clef:'bass',   quality:'Major',   phase:'triad' },
+  { notes:[{k:'a/2',a:null},{k:'c/3',a:null},{k:'e/3',a:null}], clef:'bass',   quality:'Minor',   phase:'triad' },
+  { notes:[{k:'b/2',a:null},{k:'d/3',a:null},{k:'f/3',a:null}], clef:'bass',   quality:'Dim',     phase:'triad' },
+  // ── Bass · triads · accidentals ──────────────────────────
+  { notes:[{k:'d/3',a:null},{k:'f/3',a:'#'},{k:'a/3',a:null}], clef:'bass',   quality:'Major',   phase:'triad' },
+  { notes:[{k:'a/2',a:null},{k:'c/3',a:'#'},{k:'e/3',a:null}], clef:'bass',   quality:'Major',   phase:'triad' },
+  { notes:[{k:'g/2',a:null},{k:'b/2',a:'b'},{k:'d/3',a:null}], clef:'bass',   quality:'Minor',   phase:'triad' },
+  { notes:[{k:'c/3',a:null},{k:'e/3',a:'b'},{k:'g/3',a:null}], clef:'bass',   quality:'Minor',   phase:'triad' },
+  { notes:[{k:'c/3',a:null},{k:'e/3',a:null},{k:'g/3',a:'#'}], clef:'bass',   quality:'Aug',     phase:'triad' },
+  { notes:[{k:'e/3',a:null},{k:'g/3',a:null},{k:'b/3',a:'b'}], clef:'bass',   quality:'Dim',     phase:'triad' },
+  // ── Treble · 7th chords · natural ────────────────────────
+  { notes:[{k:'c/4',a:null},{k:'e/4',a:null},{k:'g/4',a:null},{k:'b/4',a:null}], clef:'treble', quality:'Maj 7',    phase:'seventh' },
+  { notes:[{k:'d/4',a:null},{k:'f/4',a:null},{k:'a/4',a:null},{k:'c/5',a:null}], clef:'treble', quality:'Min 7',    phase:'seventh' },
+  { notes:[{k:'e/4',a:null},{k:'g/4',a:null},{k:'b/4',a:null},{k:'d/5',a:null}], clef:'treble', quality:'Min 7',    phase:'seventh' },
+  { notes:[{k:'f/4',a:null},{k:'a/4',a:null},{k:'c/5',a:null},{k:'e/5',a:null}], clef:'treble', quality:'Maj 7',    phase:'seventh' },
+  { notes:[{k:'g/4',a:null},{k:'b/4',a:null},{k:'d/5',a:null},{k:'f/5',a:null}], clef:'treble', quality:'Dom 7',    phase:'seventh' },
+  { notes:[{k:'a/4',a:null},{k:'c/5',a:null},{k:'e/5',a:null},{k:'g/5',a:null}], clef:'treble', quality:'Min 7',    phase:'seventh' },
+  { notes:[{k:'b/4',a:null},{k:'d/5',a:null},{k:'f/5',a:null},{k:'a/5',a:null}], clef:'treble', quality:'Half-dim', phase:'seventh' },
+  // ── Treble · 7th chords · accidentals ────────────────────
+  { notes:[{k:'g/4',a:null},{k:'b/4',a:null},{k:'d/5',a:null},{k:'f/5',a:'#'}],  clef:'treble', quality:'Maj 7',    phase:'seventh' },
+  { notes:[{k:'a/4',a:null},{k:'c/5',a:'#'},{k:'e/5',a:null},{k:'g/5',a:'#'}],   clef:'treble', quality:'Maj 7',    phase:'seventh' },
+  { notes:[{k:'c/4',a:null},{k:'e/4',a:null},{k:'g/4',a:null},{k:'b/4',a:'b'}],  clef:'treble', quality:'Dom 7',    phase:'seventh' },
+  { notes:[{k:'d/4',a:null},{k:'f/4',a:'#'},{k:'a/4',a:null},{k:'c/5',a:null}],  clef:'treble', quality:'Dom 7',    phase:'seventh' },
+  { notes:[{k:'f/4',a:null},{k:'a/4',a:null},{k:'c/5',a:null},{k:'e/5',a:'b'}],  clef:'treble', quality:'Dom 7',    phase:'seventh' },
+  { notes:[{k:'g/4',a:null},{k:'b/4',a:'b'},{k:'d/5',a:null},{k:'f/5',a:null}],  clef:'treble', quality:'Min 7',    phase:'seventh' },
+  { notes:[{k:'b/4',a:null},{k:'d/5',a:null},{k:'f/5',a:null},{k:'a/5',a:'b'}],  clef:'treble', quality:'Dim 7',    phase:'seventh' },
+  { notes:[{k:'c/4',a:'#'},{k:'e/4',a:null},{k:'g/4',a:null},{k:'b/4',a:'b'}],   clef:'treble', quality:'Dim 7',    phase:'seventh' },
+  { notes:[{k:'e/4',a:null},{k:'g/4',a:null},{k:'b/4',a:'b'},{k:'d/5',a:null}],  clef:'treble', quality:'Half-dim', phase:'seventh' },
+  { notes:[{k:'a/4',a:null},{k:'c/5',a:null},{k:'e/5',a:'b'},{k:'g/5',a:null}],  clef:'treble', quality:'Half-dim', phase:'seventh' },
+  // ── Bass · 7th chords ────────────────────────────────────
+  { notes:[{k:'c/3',a:null},{k:'e/3',a:null},{k:'g/3',a:null},{k:'b/3',a:null}], clef:'bass',   quality:'Maj 7',    phase:'seventh' },
+  { notes:[{k:'f/2',a:null},{k:'a/2',a:null},{k:'c/3',a:null},{k:'e/3',a:null}], clef:'bass',   quality:'Maj 7',    phase:'seventh' },
+  { notes:[{k:'g/2',a:null},{k:'b/2',a:null},{k:'d/3',a:null},{k:'f/3',a:null}], clef:'bass',   quality:'Dom 7',    phase:'seventh' },
+  { notes:[{k:'c/3',a:null},{k:'e/3',a:null},{k:'g/3',a:null},{k:'b/3',a:'b'}],  clef:'bass',   quality:'Dom 7',    phase:'seventh' },
+  { notes:[{k:'d/3',a:null},{k:'f/3',a:null},{k:'a/3',a:null},{k:'c/4',a:null}], clef:'bass',   quality:'Min 7',    phase:'seventh' },
+  { notes:[{k:'g/2',a:null},{k:'b/2',a:'b'},{k:'d/3',a:null},{k:'f/3',a:null}],  clef:'bass',   quality:'Min 7',    phase:'seventh' },
+  { notes:[{k:'b/2',a:null},{k:'d/3',a:null},{k:'f/3',a:null},{k:'a/3',a:null}], clef:'bass',   quality:'Half-dim', phase:'seventh' },
+  { notes:[{k:'b/2',a:null},{k:'d/3',a:null},{k:'f/3',a:null},{k:'a/3',a:'b'}],  clef:'bass',   quality:'Dim 7',    phase:'seventh' },
+];
+
+// ════════════════════════════════════════════════════════════
+//  CHORD WAVES  (Part 1: triads + 7th chords)
+// ════════════════════════════════════════════════════════════
+const CHORD_WAVES = [
+  { name:'Note Goblin',   hp:140,  atk:10, bonus:250,  time:11000, clefs:['treble'],        phase:'triad',   acc:false, env:'forest'  },
+  { name:'Goblin Brute',  hp:240,  atk:12, bonus:400,  time:10000, clefs:['treble'],        phase:'triad',   acc:false, env:'forest'  },
+  { name:'Clef Bandit',   hp:300,  atk:15, bonus:600,  time:9500,  clefs:['treble'],        phase:'triad',   acc:true,  env:'town'    },
+  { name:'Bass Troll',    hp:380,  atk:18, bonus:800,  time:9000,  clefs:['treble','bass'], phase:'triad',   acc:true,  env:'cave'    },
+  { name:'Cave Ogre',     hp:440,  atk:20, bonus:1000, time:9000,  clefs:['treble'],        phase:'seventh', acc:false, env:'darkwood'},
+  { name:'Sharp Witch',   hp:520,  atk:24, bonus:1400, time:8500,  clefs:['treble'],        phase:'seventh', acc:true,  env:'ruins'   },
+  { name:'CHORD MASTER',  hp:800,  atk:30, bonus:5000, time:8000,  clefs:['treble','bass'], phase:'seventh', acc:true,  env:'castle',  isBoss:true, bossPhase:1 },
+  { name:'CHORD MASTER',  hp:500,  atk:38, bonus:10000,time:6000,  clefs:['treble','bass'], phase:'seventh', acc:true,  env:'lair',    isBoss:true, bossPhase:2 },
+];
+
+// ════════════════════════════════════════════════════════════
+//  CHORDS MODULE  (Part 1)
+// ════════════════════════════════════════════════════════════
+const CHORDS_MODULE = {
+  id: 'chords',
+  name: 'Chords',
+  description: 'Identify triads and seventh chords by quality',
+  waves: CHORD_WAVES,
+
+  answerPool(wave) {
+    return wave.phase === 'seventh'
+      ? ['Maj 7', 'Min 7', 'Dom 7', 'Dim 7', 'Half-dim']
+      : ['Major', 'Minor', 'Dim', 'Aug'];
+  },
+
+  pickQuestion(hand, wave) {
+    const candidates = CHORD_POOL.filter(q =>
+      q.phase === wave.phase &&
+      wave.clefs.includes(q.clef) &&
+      (wave.acc || !q.notes.some(n => n.a)) &&
+      hand.includes(q.quality)
+    );
+    if (!candidates.length) return null;
+    const q = candidates[Math.floor(Math.random() * candidates.length)];
+    return { ...q, answer: q.quality };
+  },
+
+  render(question) { renderChord(question); },
+
+  check(question, name) { return name === question.answer; },
+};
+
+const MODULES = [NOTE_READING_MODULE, INTERVALS_MODULE, CHORDS_MODULE];
 
 const PLAYER_DAMAGE = 30;
 
@@ -1653,6 +1775,43 @@ function renderInterval(question) {
     : '𝄡 Alto Clef';
 }
 
+function renderChord(question) {
+  const container = document.getElementById('staff-container');
+  container.innerHTML = '';
+
+  const W = Math.min(container.parentElement.clientWidth - 32, 380);
+  const H = 120;
+
+  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+  renderer.resize(W, H);
+  const ctx = renderer.getContext();
+  ctx.setFont('Arial', 12);
+
+  const stave = new VF.Stave(10, 18, W - 20);
+  stave.addClef(question.clef);
+  if (question.keySig) stave.addKeySignature(question.keySig);
+  stave.setContext(ctx).draw();
+
+  const note = new VF.StaveNote({
+    keys: question.notes.map(n => n.k),
+    duration: 'w',
+    clef: question.clef,
+  });
+  question.notes.forEach((n, i) => {
+    if (n.a) note.addModifier(new VF.Accidental(n.a), i);
+  });
+
+  const voice = new VF.Voice({ numBeats: 4, beatValue: 4 }).setStrict(false);
+  voice.addTickables([note]);
+  new VF.Formatter().joinVoices([voice]).format([voice], W - 80);
+  voice.draw(ctx, stave);
+
+  document.getElementById('clef-label').textContent =
+    question.clef === 'treble' ? '𝄞 Treble Clef'
+    : question.clef === 'bass' ? '𝄢 Bass Clef'
+    : '𝄡 Alto Clef';
+}
+
 // ════════════════════════════════════════════════════════════
 //  HAND / CARDS
 // ════════════════════════════════════════════════════════════
@@ -1691,7 +1850,8 @@ function renderHand() {
       else if (name.startsWith('Maj')) cls += ' major';
       else if (name.startsWith('Min')) cls += ' minor';
       else if (name.startsWith('Aug')) cls += ' augmented';
-      else if (name.startsWith('Dim')) cls += ' diminished';
+      else if (name.startsWith('Dom')) cls += ' dominant';
+      else if (name.startsWith('Dim') || name.startsWith('Half')) cls += ' diminished';
     } else if (name.includes('♯')) {
       cls = 'sharp';
     } else if (name.includes('♭')) {
