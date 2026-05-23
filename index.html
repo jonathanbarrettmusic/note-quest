@@ -1284,7 +1284,7 @@ function initSfx() {
 
 function sfx(type) {
   const cached = _sfxCache[type];
-  if (cached && cached.readyState >= 2) {
+  if (cached) {
     const clip = cached.cloneNode();
     clip.volume = 0.65;
     clip.play().catch(() => sfxBeep(type));
