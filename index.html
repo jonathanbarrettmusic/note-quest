@@ -478,6 +478,14 @@
               drop-shadow(0 8px 18px rgba(0,0,0,.65)) !important;
     }
 
+    /* phase 2 — magical fire */
+    .boss-fire { animation: fireRage .65s ease-in-out infinite; }
+    @keyframes fireRage {
+      0%,100% { filter: drop-shadow(0 0 22px #ff4500) drop-shadow(0 0 44px #ff6600) drop-shadow(0 8px 18px rgba(0,0,0,.65)); }
+      35%     { filter: drop-shadow(0 0 42px #ff1500) drop-shadow(0 0 84px #ff8800) drop-shadow(0 8px 18px rgba(0,0,0,.65)); }
+      65%     { filter: drop-shadow(0 0 16px #ff6600) drop-shadow(0 0 32px #ffcc00) drop-shadow(0 8px 18px rgba(0,0,0,.65)); }
+    }
+
     /* enemy HUD overlay */
     .enemy-hud {
       position: absolute; top: 12px; left: 50%;
@@ -1191,24 +1199,25 @@ const AVATAR_STATS = {
 // ════════════════════════════════════════════════════════════
 const WAVES = [
   // ── Act 1 · Forest ──────────────────────────────────────────
-  { name:'Note Goblin',   emoji:'👺', hp:80,  atk:12, bonus:250,  time:8000, clefs:['treble'],               acc:false, env:'forest'  },
-  { name:'Goblin Brute',  emoji:'👺', hp:130, atk:14, bonus:400,  time:7500, clefs:['treble'],               acc:false, env:'forest'  },
+  { name:'Note Goblin',   emoji:'👺', hp:160,  atk:12, bonus:250,  time:8000, clefs:['treble'],               acc:false, env:'forest'  },
+  { name:'Goblin Brute',  emoji:'👺', hp:260,  atk:14, bonus:400,  time:7500, clefs:['treble'],               acc:false, env:'forest'  },
   // ── Act 2 · Town ────────────────────────────────────────────
-  { name:'Clef Bandit',   emoji:'🦊', hp:160, atk:18, bonus:600,  time:7000, clefs:['treble'],               acc:false, env:'town'    },
+  { name:'Clef Bandit',   emoji:'🦊', hp:320,  atk:18, bonus:600,  time:7000, clefs:['treble'],               acc:false, env:'town'    },
   // ── Act 3 · Cave ────────────────────────────────────────────
-  { name:'Bass Troll',    emoji:'🧌', hp:200, atk:20, bonus:800,  time:6000, clefs:['treble','bass'],        acc:false, env:'cave'    },
-  { name:'Cave Ogre',     emoji:'🧌', hp:260, atk:22, bonus:1000, time:5500, clefs:['treble','bass'],        acc:false, env:'cave'    },
+  { name:'Bass Troll',    emoji:'🧌', hp:400,  atk:20, bonus:800,  time:6000, clefs:['treble','bass'],        acc:false, env:'cave'    },
+  { name:'Cave Ogre',     emoji:'🧌', hp:520,  atk:22, bonus:1000, time:5500, clefs:['treble','bass'],        acc:false, env:'cave'    },
   // ── Act 4 · Dark Wood ───────────────────────────────────────
-  { name:'Sharp Witch',   emoji:'🧙', hp:250, atk:24, bonus:1100, time:5500, clefs:['treble','bass'],        acc:true,  env:'darkwood' },
-  { name:'Coven Elder',   emoji:'🧙', hp:310, atk:26, bonus:1400, time:5000, clefs:['treble','bass'],        acc:true,  env:'darkwood' },
+  { name:'Sharp Witch',   emoji:'🧙', hp:500,  atk:24, bonus:1100, time:5500, clefs:['treble','bass'],        acc:true,  env:'darkwood' },
+  { name:'Coven Elder',   emoji:'🧙', hp:620,  atk:26, bonus:1400, time:5000, clefs:['treble','bass'],        acc:true,  env:'darkwood' },
   // ── Act 5 · Ruins ───────────────────────────────────────────
-  { name:'Alto Phantom',  emoji:'👻', hp:320, atk:28, bonus:1600, time:4500, clefs:['treble','bass','alto'], acc:true,  env:'ruins'   },
+  { name:'Alto Phantom',  emoji:'👻', hp:640,  atk:28, bonus:1600, time:4500, clefs:['treble','bass','alto'], acc:true,  env:'ruins'   },
   // ── Act 6 · Castle ──────────────────────────────────────────
-  { name:'Dark Maestro',  emoji:'🎩', hp:360, atk:32, bonus:2000, time:4200, clefs:['treble','bass','alto'], acc:true,  env:'castle'  },
-  { name:'Grand Maestro', emoji:'🎩', hp:420, atk:35, bonus:2500, time:4000, clefs:['treble','bass','alto'], acc:true,  env:'castle'  },
+  { name:'Dark Maestro',  emoji:'🎩', hp:720,  atk:32, bonus:2000, time:4200, clefs:['treble','bass','alto'], acc:true,  env:'castle'  },
+  { name:'Grand Maestro', emoji:'🎩', hp:840,  atk:35, bonus:2500, time:4000, clefs:['treble','bass','alto'], acc:true,  env:'castle'  },
   // ── Act 7 · Dragon Lair ─────────────────────────────────────
-  { name:'Shadow Dragon', emoji:'🐲', hp:480, atk:38, bonus:3500, time:3800, clefs:['treble','bass','alto'], acc:true,  env:'lair'    },
-  { name:'DRAGON KING',   emoji:'🐉', hp:650, atk:42, bonus:10000,time:3500, clefs:['treble','bass','alto'], acc:true,  env:'lair',   isBoss:true },
+  { name:'Shadow Dragon', emoji:'🐲', hp:960,  atk:38, bonus:3500, time:3800, clefs:['treble','bass','alto'], acc:true,  env:'lair'    },
+  { name:'DRAGON KING',   emoji:'🐉', hp:1300, atk:42, bonus:5000, time:3500, clefs:['treble','bass','alto'], acc:true,  env:'lair',   isBoss:true, bossPhase:1 },
+  { name:'DRAGON KING',   emoji:'🐉', hp:800,  atk:50, bonus:10000,time:2500, clefs:['treble','bass','alto'], acc:true,  env:'lair',   isBoss:true, bossPhase:2 },
 ];
 
 const PLAYER_DAMAGE = 30;
@@ -1559,6 +1568,13 @@ function enemyDefeated() {
   const wave = WAVES[gs.wave];
   gs.score += wave.bonus;
 
+  if (wave.bossPhase === 1) {
+    gs.wave++;
+    showFeedback('🔥 PHASE 2 — ENRAGED!', 'wrong');
+    setTimeout(() => { clearFeedback(); startWave(); }, 1800);
+    return;
+  }
+
   if (wave.isBoss) {
     victory();
     return;
@@ -1583,9 +1599,15 @@ function startWave() {
   gs.enemyMaxHp = wave.hp;
   gs.timerLimit = wave.time;
 
-  document.getElementById('enemy-sprite').innerHTML  = SPRITES[gs.wave];
-  document.getElementById('enemy-sprite').className  = 'enemy-sprite' + (wave.isBoss ? ' boss-glow boss-size' : '');
-  document.getElementById('enemy-name').textContent  = wave.isBoss ? `⚡ ${wave.name}` : wave.name;
+  const spriteEl = document.getElementById('enemy-sprite');
+  spriteEl.innerHTML = SPRITES[Math.min(gs.wave, SPRITES.length - 1)];
+  let spriteClass = 'enemy-sprite';
+  if (wave.isBoss) spriteClass += ' boss-size';
+  if (wave.bossPhase === 2) spriteClass += ' boss-fire';
+  else if (wave.isBoss) spriteClass += ' boss-glow';
+  spriteEl.className = spriteClass;
+  document.getElementById('enemy-name').textContent =
+    wave.bossPhase === 2 ? `🔥 ${wave.name} 🔥` : wave.isBoss ? `⚡ ${wave.name}` : wave.name;
   document.getElementById('enemy-hp-max').textContent = wave.hp;
 
   setEnvironment(wave.env);
