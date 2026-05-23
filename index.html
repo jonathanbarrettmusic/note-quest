@@ -212,6 +212,8 @@
     .card-name.augmented  { color: #b45309; }
     .card-name.dominant   { color: #e11d48; }
     .card-name.diminished { color: #dc2626; }
+    .card-name.roman-numeral { font-size: 1.0rem; color: #d97706; }
+    .card-name.inversion     { font-size: 1.2rem; color: #7c3aed; }
     .card-suit { font-size: .95rem; opacity: .4; }
     .card-corner {
       position: absolute; top: 4px; left: 6px;
@@ -1568,20 +1570,111 @@ const CHORD_POOL = [
   { notes:[{k:'g/2',a:null},{k:'b/2',a:'b'},{k:'d/3',a:null},{k:'f/3',a:null}],  clef:'bass',   quality:'Min 7',    phase:'seventh' },
   { notes:[{k:'b/2',a:null},{k:'d/3',a:null},{k:'f/3',a:null},{k:'a/3',a:null}], clef:'bass',   quality:'Half-dim', phase:'seventh' },
   { notes:[{k:'b/2',a:null},{k:'d/3',a:null},{k:'f/3',a:null},{k:'a/3',a:'b'}],  clef:'bass',   quality:'Dim 7',    phase:'seventh' },
+  // ── Roman Numerals · C major ──────────────────────────────────────────────
+  { notes:[{k:'c/4',a:null},{k:'e/4',a:null},{k:'g/4',a:null}], clef:'treble', keySig:'C', answer:'I',    phase:'roman' },
+  { notes:[{k:'d/4',a:null},{k:'f/4',a:null},{k:'a/4',a:null}], clef:'treble', keySig:'C', answer:'ii',   phase:'roman' },
+  { notes:[{k:'e/4',a:null},{k:'g/4',a:null},{k:'b/4',a:null}], clef:'treble', keySig:'C', answer:'iii',  phase:'roman' },
+  { notes:[{k:'f/4',a:null},{k:'a/4',a:null},{k:'c/5',a:null}], clef:'treble', keySig:'C', answer:'IV',   phase:'roman' },
+  { notes:[{k:'g/4',a:null},{k:'b/4',a:null},{k:'d/5',a:null}], clef:'treble', keySig:'C', answer:'V',    phase:'roman' },
+  { notes:[{k:'a/4',a:null},{k:'c/5',a:null},{k:'e/5',a:null}], clef:'treble', keySig:'C', answer:'vi',   phase:'roman' },
+  { notes:[{k:'b/4',a:null},{k:'d/5',a:null},{k:'f/5',a:null}], clef:'treble', keySig:'C', answer:'vii°', phase:'roman' },
+  // ── Roman Numerals · G major ──────────────────────────────────────────────
+  { notes:[{k:'g/4',a:null},{k:'b/4',a:null},{k:'d/5',a:null}], clef:'treble', keySig:'G', answer:'I',    phase:'roman' },
+  { notes:[{k:'a/4',a:null},{k:'c/5',a:null},{k:'e/5',a:null}], clef:'treble', keySig:'G', answer:'ii',   phase:'roman' },
+  { notes:[{k:'c/4',a:null},{k:'e/4',a:null},{k:'g/4',a:null}], clef:'treble', keySig:'G', answer:'IV',   phase:'roman' },
+  { notes:[{k:'d/4',a:null},{k:'f/4',a:null},{k:'a/4',a:null}], clef:'treble', keySig:'G', answer:'V',    phase:'roman' },
+  { notes:[{k:'e/4',a:null},{k:'g/4',a:null},{k:'b/4',a:null}], clef:'treble', keySig:'G', answer:'vi',   phase:'roman' },
+  // ── Roman Numerals · F major ──────────────────────────────────────────────
+  { notes:[{k:'f/4',a:null},{k:'a/4',a:null},{k:'c/5',a:null}], clef:'treble', keySig:'F', answer:'I',    phase:'roman' },
+  { notes:[{k:'g/4',a:null},{k:'b/4',a:null},{k:'d/5',a:null}], clef:'treble', keySig:'F', answer:'ii',   phase:'roman' },
+  { notes:[{k:'b/3',a:null},{k:'d/4',a:null},{k:'f/4',a:null}], clef:'treble', keySig:'F', answer:'IV',   phase:'roman' },
+  { notes:[{k:'c/4',a:null},{k:'e/4',a:null},{k:'g/4',a:null}], clef:'treble', keySig:'F', answer:'V',    phase:'roman' },
+  { notes:[{k:'d/4',a:null},{k:'f/4',a:null},{k:'a/4',a:null}], clef:'treble', keySig:'F', answer:'vi',   phase:'roman' },
+  // ── Roman Numerals · D major ──────────────────────────────────────────────
+  { notes:[{k:'d/4',a:null},{k:'f/4',a:null},{k:'a/4',a:null}], clef:'treble', keySig:'D', answer:'I',    phase:'roman' },
+  { notes:[{k:'e/4',a:null},{k:'g/4',a:null},{k:'b/4',a:null}], clef:'treble', keySig:'D', answer:'ii',   phase:'roman' },
+  { notes:[{k:'g/4',a:null},{k:'b/4',a:null},{k:'d/5',a:null}], clef:'treble', keySig:'D', answer:'IV',   phase:'roman' },
+  { notes:[{k:'a/4',a:null},{k:'c/5',a:null},{k:'e/5',a:null}], clef:'treble', keySig:'D', answer:'V',    phase:'roman' },
+  // ── Roman Numerals · Bb major ─────────────────────────────────────────────
+  { notes:[{k:'b/3',a:null},{k:'d/4',a:null},{k:'f/4',a:null}], clef:'treble', keySig:'Bb', answer:'I',   phase:'roman' },
+  { notes:[{k:'c/4',a:null},{k:'e/4',a:null},{k:'g/4',a:null}], clef:'treble', keySig:'Bb', answer:'ii',  phase:'roman' },
+  { notes:[{k:'e/4',a:null},{k:'g/4',a:null},{k:'b/4',a:null}], clef:'treble', keySig:'Bb', answer:'IV',  phase:'roman' },
+  { notes:[{k:'f/4',a:null},{k:'a/4',a:null},{k:'c/5',a:null}], clef:'treble', keySig:'Bb', answer:'V',   phase:'roman' },
+  // ── Roman Numerals · Bass · C major ──────────────────────────────────────
+  { notes:[{k:'c/3',a:null},{k:'e/3',a:null},{k:'g/3',a:null}], clef:'bass', keySig:'C', answer:'I',    phase:'roman' },
+  { notes:[{k:'d/3',a:null},{k:'f/3',a:null},{k:'a/3',a:null}], clef:'bass', keySig:'C', answer:'ii',   phase:'roman' },
+  { notes:[{k:'f/2',a:null},{k:'a/2',a:null},{k:'c/3',a:null}], clef:'bass', keySig:'C', answer:'IV',   phase:'roman' },
+  { notes:[{k:'g/2',a:null},{k:'b/2',a:null},{k:'d/3',a:null}], clef:'bass', keySig:'C', answer:'V',    phase:'roman' },
+  { notes:[{k:'a/2',a:null},{k:'c/3',a:null},{k:'e/3',a:null}], clef:'bass', keySig:'C', answer:'vi',   phase:'roman' },
+  // ── Roman Numerals · Bass · G major ──────────────────────────────────────
+  { notes:[{k:'g/2',a:null},{k:'b/2',a:null},{k:'d/3',a:null}], clef:'bass', keySig:'G', answer:'I',    phase:'roman' },
+  { notes:[{k:'c/3',a:null},{k:'e/3',a:null},{k:'g/3',a:null}], clef:'bass', keySig:'G', answer:'IV',   phase:'roman' },
+  { notes:[{k:'d/3',a:null},{k:'f/3',a:null},{k:'a/3',a:null}], clef:'bass', keySig:'G', answer:'V',    phase:'roman' },
+  // ── Roman Numerals · Bass · F major ──────────────────────────────────────
+  { notes:[{k:'f/2',a:null},{k:'a/2',a:null},{k:'c/3',a:null}], clef:'bass', keySig:'F', answer:'I',    phase:'roman' },
+  { notes:[{k:'c/3',a:null},{k:'e/3',a:null},{k:'g/3',a:null}], clef:'bass', keySig:'F', answer:'V',    phase:'roman' },
+  // ── Triad Inversions · First Inversion ⁶ ─────────────────────────────────
+  { notes:[{k:'e/4',a:null},{k:'g/4',a:null},{k:'c/5',a:null}], clef:'treble', keySig:'C', answer:'⁶',  phase:'inversion' },
+  { notes:[{k:'b/3',a:null},{k:'d/4',a:null},{k:'g/4',a:null}], clef:'treble', keySig:'C', answer:'⁶',  phase:'inversion' },
+  { notes:[{k:'c/4',a:null},{k:'e/4',a:null},{k:'a/4',a:null}], clef:'treble', keySig:'C', answer:'⁶',  phase:'inversion' },
+  { notes:[{k:'a/3',a:null},{k:'c/4',a:null},{k:'f/4',a:null}], clef:'treble', keySig:'C', answer:'⁶',  phase:'inversion' },
+  { notes:[{k:'f/4',a:null},{k:'a/4',a:null},{k:'d/5',a:null}], clef:'treble', keySig:'C', answer:'⁶',  phase:'inversion' },
+  { notes:[{k:'g/3',a:null},{k:'b/3',a:null},{k:'e/4',a:null}], clef:'treble', keySig:'C', answer:'⁶',  phase:'inversion' },
+  { notes:[{k:'e/3',a:null},{k:'g/3',a:null},{k:'c/4',a:null}], clef:'bass',   keySig:'C', answer:'⁶',  phase:'inversion' },
+  { notes:[{k:'b/2',a:null},{k:'d/3',a:null},{k:'g/3',a:null}], clef:'bass',   keySig:'C', answer:'⁶',  phase:'inversion' },
+  { notes:[{k:'c/3',a:null},{k:'e/3',a:null},{k:'a/3',a:null}], clef:'bass',   keySig:'C', answer:'⁶',  phase:'inversion' },
+  { notes:[{k:'f/3',a:null},{k:'a/3',a:null},{k:'d/4',a:null}], clef:'bass',   keySig:'C', answer:'⁶',  phase:'inversion' },
+  // ── Triad Inversions · Second Inversion ⁶₄ ───────────────────────────────
+  { notes:[{k:'g/3',a:null},{k:'c/4',a:null},{k:'e/4',a:null}], clef:'treble', keySig:'C', answer:'⁶₄', phase:'inversion' },
+  { notes:[{k:'d/4',a:null},{k:'g/4',a:null},{k:'b/4',a:null}], clef:'treble', keySig:'C', answer:'⁶₄', phase:'inversion' },
+  { notes:[{k:'e/4',a:null},{k:'a/4',a:null},{k:'c/5',a:null}], clef:'treble', keySig:'C', answer:'⁶₄', phase:'inversion' },
+  { notes:[{k:'c/4',a:null},{k:'f/4',a:null},{k:'a/4',a:null}], clef:'treble', keySig:'C', answer:'⁶₄', phase:'inversion' },
+  { notes:[{k:'a/3',a:null},{k:'d/4',a:null},{k:'f/4',a:null}], clef:'treble', keySig:'C', answer:'⁶₄', phase:'inversion' },
+  { notes:[{k:'b/3',a:null},{k:'e/4',a:null},{k:'g/4',a:null}], clef:'treble', keySig:'C', answer:'⁶₄', phase:'inversion' },
+  { notes:[{k:'g/2',a:null},{k:'c/3',a:null},{k:'e/3',a:null}], clef:'bass',   keySig:'C', answer:'⁶₄', phase:'inversion' },
+  { notes:[{k:'d/3',a:null},{k:'g/3',a:null},{k:'b/3',a:null}], clef:'bass',   keySig:'C', answer:'⁶₄', phase:'inversion' },
+  { notes:[{k:'e/3',a:null},{k:'a/3',a:null},{k:'c/4',a:null}], clef:'bass',   keySig:'C', answer:'⁶₄', phase:'inversion' },
+  { notes:[{k:'c/3',a:null},{k:'f/3',a:null},{k:'a/3',a:null}], clef:'bass',   keySig:'C', answer:'⁶₄', phase:'inversion' },
+  { notes:[{k:'a/2',a:null},{k:'d/3',a:null},{k:'f/3',a:null}], clef:'bass',   keySig:'C', answer:'⁶₄', phase:'inversion' },
+  // ── 7th Chord Inversions · Root Position ⁷ ───────────────────────────────
+  { notes:[{k:'g/3',a:null},{k:'b/3',a:null},{k:'d/4',a:null},{k:'f/4',a:null}], clef:'treble', keySig:'C', answer:'⁷',  phase:'inversion' },
+  { notes:[{k:'c/4',a:null},{k:'e/4',a:null},{k:'g/4',a:null},{k:'b/4',a:null}], clef:'treble', keySig:'C', answer:'⁷',  phase:'inversion' },
+  { notes:[{k:'a/3',a:null},{k:'c/4',a:null},{k:'e/4',a:null},{k:'g/4',a:null}], clef:'treble', keySig:'C', answer:'⁷',  phase:'inversion' },
+  { notes:[{k:'g/2',a:null},{k:'b/2',a:null},{k:'d/3',a:null},{k:'f/3',a:null}], clef:'bass',   keySig:'C', answer:'⁷',  phase:'inversion' },
+  // ── 7th Chord Inversions · First Inversion ⁶₅ ────────────────────────────
+  { notes:[{k:'b/3',a:null},{k:'d/4',a:null},{k:'f/4',a:null},{k:'g/4',a:null}], clef:'treble', keySig:'C', answer:'⁶₅', phase:'inversion' },
+  { notes:[{k:'e/4',a:null},{k:'g/4',a:null},{k:'b/4',a:null},{k:'c/5',a:null}], clef:'treble', keySig:'C', answer:'⁶₅', phase:'inversion' },
+  { notes:[{k:'c/4',a:null},{k:'e/4',a:null},{k:'g/4',a:null},{k:'a/4',a:null}], clef:'treble', keySig:'C', answer:'⁶₅', phase:'inversion' },
+  { notes:[{k:'b/2',a:null},{k:'d/3',a:null},{k:'f/3',a:null},{k:'g/3',a:null}], clef:'bass',   keySig:'C', answer:'⁶₅', phase:'inversion' },
+  // ── 7th Chord Inversions · Second Inversion ⁴₃ ───────────────────────────
+  { notes:[{k:'d/4',a:null},{k:'f/4',a:null},{k:'g/4',a:null},{k:'b/4',a:null}], clef:'treble', keySig:'C', answer:'⁴₃', phase:'inversion' },
+  { notes:[{k:'g/3',a:null},{k:'b/3',a:null},{k:'c/4',a:null},{k:'e/4',a:null}], clef:'treble', keySig:'C', answer:'⁴₃', phase:'inversion' },
+  { notes:[{k:'e/4',a:null},{k:'g/4',a:null},{k:'a/4',a:null},{k:'c/5',a:null}], clef:'treble', keySig:'C', answer:'⁴₃', phase:'inversion' },
+  { notes:[{k:'d/3',a:null},{k:'f/3',a:null},{k:'g/3',a:null},{k:'b/3',a:null}], clef:'bass',   keySig:'C', answer:'⁴₃', phase:'inversion' },
+  // ── 7th Chord Inversions · Third Inversion ² ─────────────────────────────
+  { notes:[{k:'f/4',a:null},{k:'g/4',a:null},{k:'b/4',a:null},{k:'d/5',a:null}], clef:'treble', keySig:'C', answer:'²',  phase:'inversion' },
+  { notes:[{k:'b/3',a:null},{k:'c/4',a:null},{k:'e/4',a:null},{k:'g/4',a:null}], clef:'treble', keySig:'C', answer:'²',  phase:'inversion' },
+  { notes:[{k:'g/3',a:null},{k:'a/3',a:null},{k:'c/4',a:null},{k:'e/4',a:null}], clef:'treble', keySig:'C', answer:'²',  phase:'inversion' },
+  { notes:[{k:'f/2',a:null},{k:'g/2',a:null},{k:'b/2',a:null},{k:'d/3',a:null}], clef:'bass',   keySig:'C', answer:'²',  phase:'inversion' },
 ];
 
 // ════════════════════════════════════════════════════════════
 //  CHORD WAVES  (Part 1: triads + 7th chords)
 // ════════════════════════════════════════════════════════════
 const CHORD_WAVES = [
-  { name:'Note Goblin',   hp:140,  atk:10, bonus:250,  time:11000, clefs:['treble'],        phase:'triad',   acc:false, env:'forest'  },
-  { name:'Goblin Brute',  hp:240,  atk:12, bonus:400,  time:10000, clefs:['treble'],        phase:'triad',   acc:false, env:'forest'  },
-  { name:'Clef Bandit',   hp:300,  atk:15, bonus:600,  time:9500,  clefs:['treble'],        phase:'triad',   acc:true,  env:'town'    },
-  { name:'Bass Troll',    hp:380,  atk:18, bonus:800,  time:9000,  clefs:['treble','bass'], phase:'triad',   acc:true,  env:'cave'    },
-  { name:'Cave Ogre',     hp:440,  atk:20, bonus:1000, time:9000,  clefs:['treble'],        phase:'seventh', acc:false, env:'darkwood'},
-  { name:'Sharp Witch',   hp:520,  atk:24, bonus:1400, time:8500,  clefs:['treble'],        phase:'seventh', acc:true,  env:'ruins'   },
-  { name:'CHORD MASTER',  hp:800,  atk:30, bonus:5000, time:8000,  clefs:['treble','bass'], phase:'seventh', acc:true,  env:'castle',  isBoss:true, bossPhase:1 },
-  { name:'CHORD MASTER',  hp:500,  atk:38, bonus:10000,time:6000,  clefs:['treble','bass'], phase:'seventh', acc:true,  env:'lair',    isBoss:true, bossPhase:2 },
+  { name:'Note Goblin',      hp:140,  atk:10, bonus:250,   time:11000, clefs:['treble'],        phase:'triad',     acc:false, env:'forest'   },
+  { name:'Goblin Brute',     hp:240,  atk:12, bonus:400,   time:10000, clefs:['treble'],        phase:'triad',     acc:false, env:'forest'   },
+  { name:'Clef Bandit',      hp:300,  atk:15, bonus:600,   time:9500,  clefs:['treble'],        phase:'triad',     acc:true,  env:'town'     },
+  { name:'Bass Troll',       hp:380,  atk:18, bonus:800,   time:9000,  clefs:['treble','bass'], phase:'triad',     acc:true,  env:'cave'     },
+  { name:'Cave Ogre',        hp:440,  atk:20, bonus:1000,  time:9000,  clefs:['treble'],        phase:'seventh',   acc:false, env:'darkwood' },
+  { name:'Sharp Witch',      hp:520,  atk:24, bonus:1400,  time:8500,  clefs:['treble'],        phase:'seventh',   acc:true,  env:'ruins'    },
+  { name:'Roman Guard',      hp:600,  atk:26, bonus:1800,  time:9000,  clefs:['treble'],        phase:'roman',     acc:false, env:'castle'   },
+  { name:'Key Keeper',       hp:680,  atk:28, bonus:2200,  time:8500,  clefs:['treble','bass'], phase:'roman',     acc:false, env:'castle'   },
+  { name:'Figured Sorcerer', hp:740,  atk:30, bonus:2600,  time:8500,  clefs:['treble'],        phase:'inversion', acc:false, env:'ruins'    },
+  { name:'Inversion Wraith', hp:800,  atk:32, bonus:3000,  time:8000,  clefs:['treble','bass'], phase:'inversion', acc:false, env:'lair'     },
+  { name:'Harmonic Titan',   hp:880,  atk:34, bonus:3500,  time:8000,  clefs:['treble','bass'], phase:'inversion', acc:false, env:'lair'     },
+  { name:'CHORD EMPEROR',    hp:1200, atk:40, bonus:8000,  time:7500,  clefs:['treble','bass'], phase:'inversion', acc:false, env:'castle',   isBoss:true, bossPhase:1 },
+  { name:'CHORD EMPEROR',    hp:700,  atk:50, bonus:15000, time:5500,  clefs:['treble','bass'], phase:'inversion', acc:false, env:'lair',     isBoss:true, bossPhase:2 },
 ];
 
 // ════════════════════════════════════════════════════════════
@@ -1590,25 +1683,27 @@ const CHORD_WAVES = [
 const CHORDS_MODULE = {
   id: 'chords',
   name: 'Chords',
-  description: 'Identify triads and seventh chords by quality',
+  description: 'Identify triads, seventh chords, Roman numerals and inversions',
   waves: CHORD_WAVES,
 
   answerPool(wave) {
-    return wave.phase === 'seventh'
-      ? ['Maj 7', 'Min 7', 'Dom 7', 'Dim 7', 'Half-dim']
-      : ['Major', 'Minor', 'Dim', 'Aug'];
+    if (wave.phase === 'inversion') return ['⁶', '⁶₄', '⁷', '⁶₅', '⁴₃', '²'];
+    if (wave.phase === 'roman')     return ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'];
+    if (wave.phase === 'seventh')   return ['Maj 7', 'Min 7', 'Dom 7', 'Dim 7', 'Half-dim'];
+    return ['Major', 'Minor', 'Dim', 'Aug'];
   },
 
   pickQuestion(hand, wave) {
+    const getAnswer = q => q.answer ?? q.quality;
     const candidates = CHORD_POOL.filter(q =>
       q.phase === wave.phase &&
       wave.clefs.includes(q.clef) &&
       (wave.acc || !q.notes.some(n => n.a)) &&
-      hand.includes(q.quality)
+      hand.includes(getAnswer(q))
     );
     if (!candidates.length) return null;
     const q = candidates[Math.floor(Math.random() * candidates.length)];
-    return { ...q, answer: q.quality };
+    return { ...q, answer: getAnswer(q) };
   },
 
   render(question) { renderChord(question); },
@@ -1838,13 +1933,21 @@ function replaceCard(name) {
 }
 
 
+const INV_LABELS = new Set(['⁶','⁶₄','⁷','⁶₅','⁴₃','²']);
+const ROM_LABELS = new Set(['I','ii','iii','IV','V','vi','vii°']);
+
 function renderHand() {
   const handEl = document.getElementById('hand');
   handEl.innerHTML = '';
+  const phase = gs.module?.waves?.[gs.wave]?.phase;
   gs.hand.forEach((name, idx) => {
     const card = document.createElement('div');
     let cls = '';
-    if (name.length >= 3) {
+    if (phase === 'inversion' || INV_LABELS.has(name)) {
+      cls = 'inversion';
+    } else if (phase === 'roman' || ROM_LABELS.has(name)) {
+      cls = 'roman-numeral';
+    } else if (name.length >= 3) {
       cls = 'interval';
       if      (name.startsWith('Per')) cls += ' perfect';
       else if (name.startsWith('Maj')) cls += ' major';
