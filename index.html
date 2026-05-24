@@ -1650,11 +1650,11 @@ const CHORD_POOL = [
   { notes:[{k:'g/3',a:null},{k:'b/3',a:null},{k:'c/4',a:null},{k:'e/4',a:null}], clef:'treble', keySig:'C', answer:'⁴₃', phase:'inversion' },
   { notes:[{k:'e/4',a:null},{k:'g/4',a:null},{k:'a/4',a:null},{k:'c/5',a:null}], clef:'treble', keySig:'C', answer:'⁴₃', phase:'inversion' },
   { notes:[{k:'d/3',a:null},{k:'f/3',a:null},{k:'g/3',a:null},{k:'b/3',a:null}], clef:'bass',   keySig:'C', answer:'⁴₃', phase:'inversion' },
-  // ── 7th Chord Inversions · Third Inversion ² ─────────────────────────────
-  { notes:[{k:'f/4',a:null},{k:'g/4',a:null},{k:'b/4',a:null},{k:'d/5',a:null}], clef:'treble', keySig:'C', answer:'²',  phase:'inversion' },
-  { notes:[{k:'b/3',a:null},{k:'c/4',a:null},{k:'e/4',a:null},{k:'g/4',a:null}], clef:'treble', keySig:'C', answer:'²',  phase:'inversion' },
-  { notes:[{k:'g/3',a:null},{k:'a/3',a:null},{k:'c/4',a:null},{k:'e/4',a:null}], clef:'treble', keySig:'C', answer:'²',  phase:'inversion' },
-  { notes:[{k:'f/2',a:null},{k:'g/2',a:null},{k:'b/2',a:null},{k:'d/3',a:null}], clef:'bass',   keySig:'C', answer:'²',  phase:'inversion' },
+  // ── 7th Chord Inversions · Third Inversion ⁴₂ ────────────────────────────
+  { notes:[{k:'f/4',a:null},{k:'g/4',a:null},{k:'b/4',a:null},{k:'d/5',a:null}], clef:'treble', keySig:'C', answer:'⁴₂',  phase:'inversion' },
+  { notes:[{k:'b/3',a:null},{k:'c/4',a:null},{k:'e/4',a:null},{k:'g/4',a:null}], clef:'treble', keySig:'C', answer:'⁴₂',  phase:'inversion' },
+  { notes:[{k:'g/3',a:null},{k:'a/3',a:null},{k:'c/4',a:null},{k:'e/4',a:null}], clef:'treble', keySig:'C', answer:'⁴₂',  phase:'inversion' },
+  { notes:[{k:'f/2',a:null},{k:'g/2',a:null},{k:'b/2',a:null},{k:'d/3',a:null}], clef:'bass',   keySig:'C', answer:'⁴₂',  phase:'inversion' },
 ];
 
 // ════════════════════════════════════════════════════════════
@@ -1686,7 +1686,7 @@ const CHORDS_MODULE = {
   waves: CHORD_WAVES,
 
   answerPool(wave) {
-    if (wave.phase === 'inversion') return ['⁶', '⁶₄', '⁷', '⁶₅', '⁴₃', '²'];
+    if (wave.phase === 'inversion') return ['⁶', '⁶₄', '⁷', '⁶₅', '⁴₃', '⁴₂'];
     if (wave.phase === 'roman')     return ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'];
     if (wave.phase === 'seventh')   return ['Maj 7', 'Min 7', 'Dom 7', 'Dim 7', 'Half-dim'];
     return ['Major', 'Minor', 'Dim', 'Aug'];
@@ -1932,7 +1932,7 @@ function replaceCard(name) {
 }
 
 
-const INV_LABELS = new Set(['⁶','⁶₄','⁷','⁶₅','⁴₃','²']);
+const INV_LABELS = new Set(['⁶','⁶₄','⁷','⁶₅','⁴₃','⁴₂']);
 const ROM_LABELS = new Set(['I','ii','iii','IV','V','vi','vii°']);
 
 function renderHand() {
