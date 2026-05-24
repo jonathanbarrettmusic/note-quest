@@ -214,6 +214,8 @@
     .card-name.diminished { color: #dc2626; }
     .card-name.roman-numeral { font-size: 1.0rem; color: #d97706; }
     .card-name.inversion     { font-size: 1.2rem; color: #7c3aed; }
+    .card-name.major-key     { font-size: 1.1rem; color: #0369a1; }
+    .card-name.minor-key     { font-size: 1.1rem; color: #7c3aed; }
     .card-suit { font-size: .95rem; opacity: .4; }
     .card-corner {
       position: absolute; top: 4px; left: 6px;
@@ -1710,7 +1712,135 @@ const CHORDS_MODULE = {
   check(question, name) { return name === question.answer; },
 };
 
-const MODULES = [NOTE_READING_MODULE, INTERVALS_MODULE, CHORDS_MODULE];
+// ════════════════════════════════════════════════════════════
+//  KEY SIGNATURES MODULE
+// ════════════════════════════════════════════════════════════
+const KEY_POOL = [
+  // major-sharp phase: C, G, D, A, E, B, F# major
+  { vfKey:'C',  clef:'treble', answer:'C',  phase:'major-sharp' },
+  { vfKey:'G',  clef:'treble', answer:'G',  phase:'major-sharp' },
+  { vfKey:'D',  clef:'treble', answer:'D',  phase:'major-sharp' },
+  { vfKey:'A',  clef:'treble', answer:'A',  phase:'major-sharp' },
+  { vfKey:'E',  clef:'treble', answer:'E',  phase:'major-sharp' },
+  { vfKey:'B',  clef:'treble', answer:'B',  phase:'major-sharp' },
+  { vfKey:'F#', clef:'treble', answer:'F♯', phase:'major-sharp' },
+  { vfKey:'C',  clef:'bass',   answer:'C',  phase:'major-sharp' },
+  { vfKey:'G',  clef:'bass',   answer:'G',  phase:'major-sharp' },
+  { vfKey:'D',  clef:'bass',   answer:'D',  phase:'major-sharp' },
+  { vfKey:'A',  clef:'bass',   answer:'A',  phase:'major-sharp' },
+  { vfKey:'E',  clef:'bass',   answer:'E',  phase:'major-sharp' },
+  { vfKey:'B',  clef:'bass',   answer:'B',  phase:'major-sharp' },
+  { vfKey:'F#', clef:'bass',   answer:'F♯', phase:'major-sharp' },
+
+  // major-flat phase: C, F, Bb, Eb, Ab, Db, Gb major
+  { vfKey:'C',  clef:'treble', answer:'C',  phase:'major-flat' },
+  { vfKey:'F',  clef:'treble', answer:'F',  phase:'major-flat' },
+  { vfKey:'Bb', clef:'treble', answer:'B♭', phase:'major-flat' },
+  { vfKey:'Eb', clef:'treble', answer:'E♭', phase:'major-flat' },
+  { vfKey:'Ab', clef:'treble', answer:'A♭', phase:'major-flat' },
+  { vfKey:'Db', clef:'treble', answer:'D♭', phase:'major-flat' },
+  { vfKey:'Gb', clef:'treble', answer:'G♭', phase:'major-flat' },
+  { vfKey:'C',  clef:'bass',   answer:'C',  phase:'major-flat' },
+  { vfKey:'F',  clef:'bass',   answer:'F',  phase:'major-flat' },
+  { vfKey:'Bb', clef:'bass',   answer:'B♭', phase:'major-flat' },
+  { vfKey:'Eb', clef:'bass',   answer:'E♭', phase:'major-flat' },
+  { vfKey:'Ab', clef:'bass',   answer:'A♭', phase:'major-flat' },
+  { vfKey:'Db', clef:'bass',   answer:'D♭', phase:'major-flat' },
+  { vfKey:'Gb', clef:'bass',   answer:'G♭', phase:'major-flat' },
+
+  // minor-sharp phase: Am, Em, Bm, F#m, C#m, G#m, D#m (shown with relative major key sig)
+  { vfKey:'C',  clef:'treble', answer:'Am',  phase:'minor-sharp' },
+  { vfKey:'G',  clef:'treble', answer:'Em',  phase:'minor-sharp' },
+  { vfKey:'D',  clef:'treble', answer:'Bm',  phase:'minor-sharp' },
+  { vfKey:'A',  clef:'treble', answer:'F♯m', phase:'minor-sharp' },
+  { vfKey:'E',  clef:'treble', answer:'C♯m', phase:'minor-sharp' },
+  { vfKey:'B',  clef:'treble', answer:'G♯m', phase:'minor-sharp' },
+  { vfKey:'F#', clef:'treble', answer:'D♯m', phase:'minor-sharp' },
+  { vfKey:'C',  clef:'bass',   answer:'Am',  phase:'minor-sharp' },
+  { vfKey:'G',  clef:'bass',   answer:'Em',  phase:'minor-sharp' },
+  { vfKey:'D',  clef:'bass',   answer:'Bm',  phase:'minor-sharp' },
+  { vfKey:'A',  clef:'bass',   answer:'F♯m', phase:'minor-sharp' },
+  { vfKey:'E',  clef:'bass',   answer:'C♯m', phase:'minor-sharp' },
+  { vfKey:'B',  clef:'bass',   answer:'G♯m', phase:'minor-sharp' },
+  { vfKey:'F#', clef:'bass',   answer:'D♯m', phase:'minor-sharp' },
+
+  // minor-flat phase: Am, Dm, Gm, Cm, Fm, Bbm, Ebm (shown with relative major key sig)
+  { vfKey:'C',  clef:'treble', answer:'Am',  phase:'minor-flat' },
+  { vfKey:'F',  clef:'treble', answer:'Dm',  phase:'minor-flat' },
+  { vfKey:'Bb', clef:'treble', answer:'Gm',  phase:'minor-flat' },
+  { vfKey:'Eb', clef:'treble', answer:'Cm',  phase:'minor-flat' },
+  { vfKey:'Ab', clef:'treble', answer:'Fm',  phase:'minor-flat' },
+  { vfKey:'Db', clef:'treble', answer:'B♭m', phase:'minor-flat' },
+  { vfKey:'Gb', clef:'treble', answer:'E♭m', phase:'minor-flat' },
+  { vfKey:'C',  clef:'bass',   answer:'Am',  phase:'minor-flat' },
+  { vfKey:'F',  clef:'bass',   answer:'Dm',  phase:'minor-flat' },
+  { vfKey:'Bb', clef:'bass',   answer:'Gm',  phase:'minor-flat' },
+  { vfKey:'Eb', clef:'bass',   answer:'Cm',  phase:'minor-flat' },
+  { vfKey:'Ab', clef:'bass',   answer:'Fm',  phase:'minor-flat' },
+  { vfKey:'Db', clef:'bass',   answer:'B♭m', phase:'minor-flat' },
+  { vfKey:'Gb', clef:'bass',   answer:'E♭m', phase:'minor-flat' },
+];
+
+const KEY_WAVES = [
+  { name:'Key Scout',      hp:120,  atk:10, bonus:200,   time:12000, clefs:['treble'],        phase:'major-sharp', env:'forest'  },
+  { name:'Sharp Scholar',  hp:200,  atk:12, bonus:350,   time:11000, clefs:['treble','bass'], phase:'major-sharp', env:'forest'  },
+  { name:'Flat Wanderer',  hp:260,  atk:15, bonus:500,   time:11000, clefs:['treble'],        phase:'major-flat',  env:'town'    },
+  { name:'Flat Sage',      hp:340,  atk:18, bonus:750,   time:10500, clefs:['treble','bass'], phase:'major-flat',  env:'cave'    },
+  { name:'Key Shaman',     hp:420,  atk:20, bonus:1100,  time:10000, clefs:['treble','bass'], phase:'major',       env:'darkwood'},
+  { name:'Minor Initiate', hp:500,  atk:22, bonus:1400,  time:10000, clefs:['treble'],        phase:'minor-sharp', env:'ruins'   },
+  { name:'Minor Shadow',   hp:580,  atk:25, bonus:1800,  time:9500,  clefs:['treble','bass'], phase:'minor-sharp', env:'castle'  },
+  { name:'Dark Bard',      hp:660,  atk:28, bonus:2200,  time:9500,  clefs:['treble'],        phase:'minor-flat',  env:'lair'    },
+  { name:'Flat Specter',   hp:740,  atk:30, bonus:2700,  time:9000,  clefs:['treble','bass'], phase:'minor-flat',  env:'forest'  },
+  { name:'Key Keeper',     hp:840,  atk:33, bonus:3400,  time:8500,  clefs:['treble','bass'], phase:'all',         env:'ruins'   },
+  { name:'Tonal Titan',    hp:960,  atk:36, bonus:4200,  time:8000,  clefs:['treble','bass'], phase:'all',         env:'castle'  },
+  { name:'KEY MASTER',     hp:1200, atk:42, bonus:8000,  time:7500,  clefs:['treble','bass'], phase:'all',         env:'castle',  isBoss:true, bossPhase:1 },
+  { name:'KEY MASTER',     hp:700,  atk:55, bonus:16000, time:5500,  clefs:['treble','bass'], phase:'all',         env:'lair',    isBoss:true, bossPhase:2 },
+];
+
+const KEY_SIGS_MODULE = {
+  id: 'key-signatures',
+  name: 'Key Signatures',
+  description: 'Identify major and minor key signatures in treble and bass clef',
+  waves: KEY_WAVES,
+
+  answerPool(wave) {
+    const phaseMap = {
+      'major-sharp': ['major-sharp'],
+      'major-flat':  ['major-flat'],
+      'major':       ['major-sharp', 'major-flat'],
+      'minor-sharp': ['minor-sharp'],
+      'minor-flat':  ['minor-flat'],
+      'all':         ['major-sharp', 'major-flat', 'minor-sharp', 'minor-flat'],
+    };
+    const phases = phaseMap[wave.phase] ?? [wave.phase];
+    return [...new Set(KEY_POOL.filter(q => phases.includes(q.phase)).map(q => q.answer))];
+  },
+
+  pickQuestion(hand, wave) {
+    const phaseMap = {
+      'major-sharp': ['major-sharp'],
+      'major-flat':  ['major-flat'],
+      'major':       ['major-sharp', 'major-flat'],
+      'minor-sharp': ['minor-sharp'],
+      'minor-flat':  ['minor-flat'],
+      'all':         ['major-sharp', 'major-flat', 'minor-sharp', 'minor-flat'],
+    };
+    const phases = phaseMap[wave.phase] ?? [wave.phase];
+    const candidates = KEY_POOL.filter(q =>
+      phases.includes(q.phase) &&
+      wave.clefs.includes(q.clef) &&
+      hand.includes(q.answer)
+    );
+    if (!candidates.length) return null;
+    return { ...candidates[Math.floor(Math.random() * candidates.length)] };
+  },
+
+  render(question) { renderKeySignature(question); },
+
+  check(question, name) { return name === question.answer; },
+};
+
+const MODULES = [NOTE_READING_MODULE, INTERVALS_MODULE, CHORDS_MODULE, KEY_SIGS_MODULE];
 
 const PLAYER_DAMAGE = 30;
 
@@ -1906,6 +2036,29 @@ function renderChord(question) {
     : '𝄡 Alto Clef';
 }
 
+function renderKeySignature(question) {
+  const container = document.getElementById('staff-container');
+  container.innerHTML = '';
+
+  const W = Math.max(200, Math.min(container.parentElement.clientWidth - 32, 380));
+  const H = 120;
+
+  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+  renderer.resize(W, H);
+  const ctx = renderer.getContext();
+  ctx.setFont('Arial', 12);
+
+  const stave = new VF.Stave(10, 18, W - 20);
+  stave.addClef(question.clef);
+  stave.addKeySignature(question.vfKey);
+  stave.setContext(ctx).draw();
+
+  const isMinor = question.answer.endsWith('m');
+  const clefSym = question.clef === 'treble' ? '𝄞' : '𝄢';
+  document.getElementById('clef-label').textContent =
+    `${clefSym} ${isMinor ? 'Minor' : 'Major'} Key`;
+}
+
 // ════════════════════════════════════════════════════════════
 //  HAND / CARDS
 // ════════════════════════════════════════════════════════════
@@ -1934,6 +2087,12 @@ function replaceCard(name) {
 
 const INV_LABELS = new Set(['⁶','⁶₄','⁷','⁶₅','⁴₃','⁴₂']);
 const ROM_LABELS = new Set(['I','ii','iii','IV','V','vi','vii°']);
+const KEY_SIG_ANSWERS = new Set([
+  'C','G','D','A','E','B','F♯',
+  'F','B♭','E♭','A♭','D♭','G♭',
+  'Am','Em','Bm','F♯m','C♯m','G♯m','D♯m',
+  'Dm','Gm','Cm','Fm','B♭m','E♭m',
+]);
 
 function renderHand() {
   const handEl = document.getElementById('hand');
@@ -1946,6 +2105,10 @@ function renderHand() {
       cls = 'inversion';
     } else if (phase === 'roman' || ROM_LABELS.has(name)) {
       cls = 'roman-numeral';
+    } else if (KEY_SIG_ANSWERS.has(name) &&
+               (phase === 'major-sharp' || phase === 'major-flat' || phase === 'major' ||
+                phase === 'minor-sharp' || phase === 'minor-flat' || phase === 'all')) {
+      cls = name.endsWith('m') ? 'minor-key' : 'major-key';
     } else if (name.length >= 3) {
       cls = 'interval';
       if      (name.startsWith('Per')) cls += ' perfect';
