@@ -321,7 +321,6 @@
         radial-gradient(circle at 78% 14%, rgba(255,255,210,.85) 10px, rgba(220,220,160,.2) 34px, transparent 55px),
         radial-gradient(ellipse at 50% 40%, rgba(10,60,20,.45) 20%, transparent 65%),
         linear-gradient(to bottom, #030c08 0%, #06180e 28%, #0b2e16 58%, #050e08 100%);
-      animation: ambientBreathe 10s ease-in-out infinite;
     }
     .env-forest::before {
       bottom: 0; height: 32%;
@@ -336,7 +335,6 @@
         radial-gradient(circle at 20% 12%, rgba(255,110,50,.6) 8px, rgba(255,80,30,.15) 40px, transparent 70px),
         radial-gradient(circle at 62% 18%, rgba(200,80,20,.4) 6px, rgba(180,60,10,.1) 30px, transparent 55px),
         linear-gradient(to bottom, #100505 0%, #3e1808 30%, #602808 62%, #281005 100%);
-      animation: ambientBreathe 12s ease-in-out infinite;
     }
     .env-town::before {
       bottom: 0; height: 40%;
@@ -351,7 +349,6 @@
         radial-gradient(circle at 70% 68%, rgba(0,160,240,.28) 14px, rgba(0,125,195,.08) 45px, transparent 75px),
         radial-gradient(ellipse at 50% 100%, rgba(0,55,115,.45) 0%, transparent 60%),
         linear-gradient(to bottom, #040408 0%, #08082a 32%, #10103c 62%, #060618 100%);
-      animation: crystalShimmer 7s ease-in-out infinite;
     }
     .env-cave::before {
       bottom: 0; height: 25%;
@@ -371,7 +368,6 @@
         radial-gradient(circle at 15% 22%, rgba(160,0,220,.28) 16px, rgba(120,0,180,.07) 60px, transparent 100px),
         radial-gradient(circle at 78% 28%, rgba(120,0,200,.22) 12px, rgba(100,0,160,.05) 50px, transparent 85px),
         linear-gradient(to bottom, #060412 0%, #120828 32%, #1e1048 62%, #080420 100%);
-      animation: ambientBreathe 9s ease-in-out infinite;
     }
     .env-darkwood::before {
       bottom: 0; height: 45%;
@@ -385,7 +381,6 @@
         radial-gradient(circle at 50% 22%, rgba(140,175,130,.15) 22px, rgba(100,145,95,.05) 70px, transparent 110px),
         radial-gradient(ellipse at 50% 55%, rgba(55,75,50,.25) 0%, transparent 60%),
         linear-gradient(to bottom, #060806 0%, #0c100a 30%, #151810 60%, #080a06 100%);
-      animation: ambientBreathe 14s ease-in-out infinite;
     }
     .env-ruins::before {
       bottom: 0; height: 35%;
@@ -400,7 +395,6 @@
         radial-gradient(ellipse at 22% 38%, rgba(100,0,150,.18) 40px, transparent 110px),
         radial-gradient(ellipse at 78% 42%, rgba(80,0,120,.15) 35px, transparent 90px),
         linear-gradient(to bottom, #030006 0%, #08000e 30%, #12001e 62%, #050008 100%);
-      animation: castleGlow 8s ease-in-out infinite;
     }
     .env-castle::after {
       top: 0; height: 18%;
@@ -416,7 +410,6 @@
         radial-gradient(circle at 72% 82%, rgba(255,120,0,.42) 18px, rgba(255,80,0,.1) 60px, transparent 95px),
         radial-gradient(ellipse at 50% 0%, rgba(100,0,0,.65) 0%, transparent 50%),
         linear-gradient(to bottom, #120000 0%, #380500 35%, #5e1000 65%, #1e0300 100%);
-      animation: lavaFlicker 3s ease-in-out infinite;
     }
     .env-lair::before {
       bottom: 0; height: 30%;
@@ -429,25 +422,6 @@
       clip-path: polygon(0 0%,0 70%,8% 100%,16% 62%,24% 90%,32% 52%,40% 80%,50% 100%,60% 70%,68% 95%,76% 58%,84% 85%,92% 66%,100% 82%,100% 0%);
     }
 
-    /* ── Ambient animations ── */
-    @keyframes ambientBreathe {
-      0%,100% { filter: brightness(1);    }
-      50%      { filter: brightness(1.07); }
-    }
-    @keyframes crystalShimmer {
-      0%,100% { filter: brightness(1)    hue-rotate(0deg);  }
-      50%      { filter: brightness(1.12) hue-rotate(12deg); }
-    }
-    @keyframes castleGlow {
-      0%,100% { filter: brightness(1)    saturate(1);    }
-      50%      { filter: brightness(1.06) saturate(1.15); }
-    }
-    @keyframes lavaFlicker {
-      0%,100% { filter: brightness(1)    saturate(1);    }
-      20%      { filter: brightness(1.18) saturate(1.25); }
-      55%      { filter: brightness(.9)   saturate(.85);  }
-      78%      { filter: brightness(1.12) saturate(1.18); }
-    }
 
     /* ── New card deal animation ── */
     @keyframes dealCard {
@@ -491,11 +465,9 @@
               drop-shadow(0 8px 18px rgba(0,0,0,.65)) !important;
     }
 
-    /* phase 2 — magical fire (single drop-shadow keeps GPU load mobile-safe) */
-    .boss-fire { animation: fireRage .8s ease-in-out infinite; }
-    @keyframes fireRage {
-      0%,100% { filter: drop-shadow(0 0 10px #ff4500) drop-shadow(0 6px 12px rgba(0,0,0,.6)); }
-      50%     { filter: drop-shadow(0 0 18px #ff7700) drop-shadow(0 6px 12px rgba(0,0,0,.6)); }
+    /* phase 2 — static glow instead of animated filter */
+    .boss-fire {
+      filter: drop-shadow(0 0 14px #ff4500) drop-shadow(0 6px 12px rgba(0,0,0,.6)) !important;
     }
 
     /* enemy HUD overlay */
@@ -2448,7 +2420,7 @@ function setEnvironment(env) {
   playMusic(env);
   const bg = document.getElementById('game-bg');
   bg.style.opacity = '0';
-  later(() => { bg.className = `env-${env}`; bg.style.opacity = '1'; }, 450);
+  setTimeout(() => { bg.className = `env-${env}`; bg.style.opacity = '1'; }, 450);
 }
 
 function showModeSelect() {
