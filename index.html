@@ -751,6 +751,30 @@
 'use strict';
 const VF = VexFlow;
 
+// ── Tracked timeouts — cancelled at every major state transition ──────────────
+const _tids = new Set();
+function later(fn, ms) {
+  const id = setTimeout(() => { _tids.delete(id); fn(); }, ms);
+  _tids.add(id); return id;
+}
+function cancelAll() { _tids.forEach(clearTimeout); _tids.clear(); }
+
+// ── VexFlow renderer cache — one SVG element reused across all questions ──────
+let _vfRend = null, _vfCtx = null, _vfW = 0, _vfH = 0;
+function getCtx(container, W, H) {
+  if (!_vfRend || _vfW !== W || _vfH !== H) {
+    container.innerHTML = '';
+    _vfRend = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+    _vfRend.resize(W, H);
+    _vfCtx = _vfRend.getContext();
+    _vfW = W; _vfH = H;
+  } else {
+    _vfCtx.clear();
+  }
+  _vfCtx.setFont('Arial', 12);
+  return _vfCtx;
+}
+
 // ════════════════════════════════════════════════════════════
 //  NOTE DATABASE
 // ════════════════════════════════════════════════════════════
@@ -1903,23 +1927,23 @@ const SFX_FILES = {
   defeat:  'sfx/enemy-defeat.mp3',  // enemy dies
   boss:    'sfx/boss-hit.mp3',      // hit on the Dragon King
 };
-const _sfxCache = {};
+const _sfxPool = {};
 
 function initSfx() {
   for (const [type, path] of Object.entries(SFX_FILES)) {
-    const a = new Audio(path);
-    a.preload = 'auto';
-    a.addEventListener('error', () => delete _sfxCache[type], { once: true });
-    _sfxCache[type] = a;
+    const pool = [new Audio(path), new Audio(path)];
+    pool.forEach(a => { a.preload = 'auto'; a.volume = 0.65; });
+    pool[0].addEventListener('error', () => { _sfxPool[type] = null; }, { once: true });
+    _sfxPool[type] = pool;
   }
 }
 
 function sfx(type) {
-  const cached = _sfxCache[type];
-  if (cached) {
-    const clip = cached.cloneNode();
-    clip.volume = 0.65;
-    clip.play().catch(() => sfxBeep(type));
+  const pool = _sfxPool[type];
+  if (pool) {
+    const el = pool.find(a => a.paused || a.ended) ?? pool[0];
+    el.currentTime = 0;
+    el.play().catch(() => sfxBeep(type));
     return;
   }
   sfxBeep(type);
@@ -1938,15 +1962,11 @@ function sfxBeep(type) {
 // ════════════════════════════════════════════════════════════
 function renderNote(clef, noteData) {
   const container = document.getElementById('staff-container');
-  container.innerHTML = '';
 
-  const W = Math.min(container.parentElement.clientWidth - 32, 380);
+  const W = Math.min(container.parentElement.clientWidth - 32, 380) || 320;
   const H = 120;
 
-  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
-  renderer.resize(W, H);
-  const ctx = renderer.getContext();
-  ctx.setFont('Arial', 12);
+  const ctx = getCtx(container, W, H);
 
   const stave = new VF.Stave(10, 18, W - 20);
   stave.addClef(clef);
@@ -1966,15 +1986,11 @@ function renderNote(clef, noteData) {
 
 function renderInterval(question) {
   const container = document.getElementById('staff-container');
-  container.innerHTML = '';
 
-  const W = Math.min(container.parentElement.clientWidth - 32, 380);
+  const W = Math.min(container.parentElement.clientWidth - 32, 380) || 320;
   const H = 120;
 
-  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
-  renderer.resize(W, H);
-  const ctx = renderer.getContext();
-  ctx.setFont('Arial', 12);
+  const ctx = getCtx(container, W, H);
 
   const stave = new VF.Stave(10, 18, W - 20);
   stave.addClef(question.clef);
@@ -2001,15 +2017,11 @@ function renderInterval(question) {
 
 function renderChord(question) {
   const container = document.getElementById('staff-container');
-  container.innerHTML = '';
 
-  const W = Math.max(200, Math.min(container.parentElement.clientWidth - 32, 380));
+  const W = Math.max(200, Math.min(container.parentElement.clientWidth - 32, 380)) || 320;
   const H = 160;
 
-  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
-  renderer.resize(W, H);
-  const ctx = renderer.getContext();
-  ctx.setFont('Arial', 12);
+  const ctx = getCtx(container, W, H);
 
   const stave = new VF.Stave(10, 18, W - 20);
   stave.addClef(question.clef);
@@ -2038,15 +2050,11 @@ function renderChord(question) {
 
 function renderKeySignature(question) {
   const container = document.getElementById('staff-container');
-  container.innerHTML = '';
 
-  const W = Math.max(200, Math.min(container.parentElement.clientWidth - 32, 380));
+  const W = Math.max(200, Math.min(container.parentElement.clientWidth - 32, 380)) || 320;
   const H = 120;
 
-  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
-  renderer.resize(W, H);
-  const ctx = renderer.getContext();
-  ctx.setFont('Arial', 12);
+  const ctx = getCtx(container, W, H);
 
   const stave = new VF.Stave(10, 18, W - 20);
   stave.addClef(question.clef);
@@ -2219,9 +2227,9 @@ function handleCorrect(cardEl) {
   if (wave.isBoss) sfx('boss');
 
   if (gs.enemyHp <= 0) {
-    setTimeout(() => enemyDefeated(), 500);
+    later(() => enemyDefeated(), 500);
   } else {
-    setTimeout(() => newQuestion(), 600);
+    later(() => newQuestion(), 600);
   }
 }
 
@@ -2233,7 +2241,7 @@ function handleWrong(name, cardEl) {
   replaceCard(name);
   applyEnemyAttack();
   updateUI();
-  setTimeout(() => newQuestion(), 800);
+  later(() => newQuestion(), 800);
 }
 
 function handleTimeout() {
@@ -2244,41 +2252,33 @@ function handleTimeout() {
   showFeedback('⏱ Too slow!', 'wrong');
   applyEnemyAttack();
   updateUI();
-  setTimeout(() => newQuestion(), 800);
+  later(() => newQuestion(), 800);
+}
+
+function restartAnim(el, cls, ...remove) {
+  el.classList.remove(cls, ...remove);
+  requestAnimationFrame(() => {
+    el.classList.add(cls);
+    el.addEventListener('animationend', () => el.classList.remove(cls), { once: true });
+  });
 }
 
 function animateEnemyHit() {
-  const el = document.getElementById('enemy-sprite');
-  el.classList.remove('enemy-hit');
-  void el.offsetWidth;
-  el.classList.add('enemy-hit');
-  el.addEventListener('animationend', () => el.classList.remove('enemy-hit'), { once: true });
+  restartAnim(document.getElementById('enemy-sprite'), 'enemy-hit');
 }
 
 function animatePlayerHit() {
-  const el = document.getElementById('screen-flash');
-  el.classList.remove('active');
-  void el.offsetWidth;
-  el.classList.add('active');
-  el.addEventListener('animationend', () => el.classList.remove('active'), { once: true });
+  restartAnim(document.getElementById('screen-flash'), 'active');
 }
 
 function animatePlayerAttack() {
   const el = document.getElementById('player-sprite');
-  if (!el) return;
-  el.classList.remove('player-attack', 'player-hurt');
-  void el.offsetWidth;
-  el.classList.add('player-attack');
-  el.addEventListener('animationend', () => el.classList.remove('player-attack'), { once: true });
+  if (el) restartAnim(el, 'player-attack', 'player-hurt');
 }
 
 function animatePlayerHurt() {
   const el = document.getElementById('player-sprite');
-  if (!el) return;
-  el.classList.remove('player-attack', 'player-hurt');
-  void el.offsetWidth;
-  el.classList.add('player-hurt');
-  el.addEventListener('animationend', () => el.classList.remove('player-hurt'), { once: true });
+  if (el) restartAnim(el, 'player-hurt', 'player-attack');
 }
 
 function applyEnemyAttack() {
@@ -2288,11 +2288,11 @@ function applyEnemyAttack() {
   spawnFloater(`-${wave.atk}`, 'dmg', document.getElementById('player-hp-text'));
   animatePlayerHit();
   animatePlayerHurt();
-  setTimeout(() => document.getElementById('player-hp-bar').classList.remove('danger'), 500);
+  later(() => document.getElementById('player-hp-bar').classList.remove('danger'), 500);
 
   if (gs.playerHp <= 0) {
     gs.running = false;
-    setTimeout(() => gameOver(), 600);
+    later(() => gameOver(), 600);
   }
 }
 
@@ -2304,7 +2304,7 @@ function enemyDefeated() {
   if (wave.bossPhase === 1) {
     gs.wave++;
     showFeedback('🔥 PHASE 2 — ENRAGED!', 'wrong');
-    setTimeout(() => { clearFeedback(); startWave(); }, 1800);
+    later(() => { clearFeedback(); startWave(); }, 1800);
     return;
   }
 
@@ -2317,7 +2317,7 @@ function enemyDefeated() {
   if (gs.wave >= gs.module.waves.length) { victory(); return; }
 
   showFeedback('⚔️ Enemy defeated!', 'correct');
-  setTimeout(() => {
+  later(() => {
     clearFeedback();
     startWave();
   }, 1200);
@@ -2345,7 +2345,8 @@ function startWave() {
 
   setEnvironment(wave.env);
   updateUI();
-  setTimeout(() => newQuestion(), 400);
+  cancelAll();
+  later(() => newQuestion(), 400);
 }
 
 // ════════════════════════════════════════════════════════════
@@ -2447,7 +2448,7 @@ function setEnvironment(env) {
   playMusic(env);
   const bg = document.getElementById('game-bg');
   bg.style.opacity = '0';
-  setTimeout(() => { bg.className = `env-${env}`; bg.style.opacity = '1'; }, 450);
+  later(() => { bg.className = `env-${env}`; bg.style.opacity = '1'; }, 450);
 }
 
 function showModeSelect() {
@@ -2487,6 +2488,7 @@ function beginQuest() {
   gs.playerHp    = stats.hp;
   gs.playerMaxHp = stats.hp;
   gs.comboBonus  = stats.comboBonus;
+  _vfRend = null; _vfCtx = null; _vfW = 0; _vfH = 0;
   initHand();
   gs.running = true;
   document.getElementById('player-sprite').innerHTML = PLAYER_SPRITES[avatar];
@@ -2495,16 +2497,19 @@ function beginQuest() {
 }
 
 function gameOver() {
+  cancelAll();
   stopTimer();
   gs.running = false;
   playMusic('menu');
   document.getElementById('go-score').textContent = gs.score.toLocaleString();
+  const waveIdx = Math.min(gs.wave, gs.module.waves.length - 1);
   document.getElementById('go-summary').textContent =
-    `Reached Wave ${gs.wave + 1}: ${gs.module.waves[gs.wave].name}`;
+    `Reached Wave ${waveIdx + 1}: ${gs.module.waves[waveIdx].name}`;
   showScreen('gameover');
 }
 
 function victory() {
+  cancelAll();
   stopTimer();
   gs.running = false;
   playMusic('menu');
@@ -2570,6 +2575,7 @@ function showScreen(name) {
 }
 
 function showMenu() {
+  cancelAll();
   stopTimer();
   gs.running = false;
   renderLB('lb-menu');
