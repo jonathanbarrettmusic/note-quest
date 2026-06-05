@@ -619,6 +619,14 @@
       width: 100%;
     }
     .tut-title { font-size: .95rem; font-weight: 800; color: #a78bfa; }
+    .tut-header-right { display: flex; align-items: center; gap: .5rem; }
+    .tut-speak-btn {
+      background: none; border: none; font-size: 1.15rem; cursor: pointer;
+      padding: .1rem .25rem; border-radius: 6px; color: var(--text);
+      opacity: .75; transition: opacity .15s;
+    }
+    .tut-speak-btn:active { opacity: .4; }
+    .tut-speak-btn.muted { opacity: .3; }
     .tut-progress { font-size: .78rem; color: var(--text-dim); }
     .tut-lyra-row {
       display: flex; gap: .85rem; align-items: flex-start; width: 100%;
@@ -769,7 +777,10 @@
 <div id="screen-tutorial" class="screen">
   <div class="tut-header">
     <span class="tut-title">📖 Tutorial — Elder Lyra</span>
-    <span class="tut-progress" id="tut-progress">1 / 10</span>
+    <div class="tut-header-right">
+      <button id="tut-btn-speak" class="tut-speak-btn" onclick="tutToggleSpeech()" title="Toggle speech">🔊</button>
+      <span class="tut-progress" id="tut-progress">1 / 26</span>
+    </div>
   </div>
   <div class="tut-lyra-row">
     <div class="tut-lyra-sprite" id="tut-lyra-sprite"></div>
@@ -2542,6 +2553,7 @@ function setEnvironment(env) {
 }
 
 function showModeSelect() {
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
   const grid = document.getElementById('mode-grid');
   const tutCard = `
     <div class="mode-card tutorial-card" onclick="showTutorial()">
@@ -2666,6 +2678,49 @@ function renderLB(containerId) {
 // ════════════════════════════════════════════════════════════
 let _tutStep = 0;
 let _tutVfRend = null, _tutVfCtx = null, _tutVfW = 0, _tutVfH = 0;
+let _tutSpeechOn = true;
+
+function tutSpeak(rawHtml) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  if (!_tutSpeechOn) return;
+
+  // Strip HTML tags and decode entities using a temporary element
+  const tmp = document.createElement('div');
+  tmp.innerHTML = rawHtml;
+  const plain = (tmp.textContent || tmp.innerText || '').trim();
+  if (!plain) return;
+
+  const utt = new SpeechSynthesisUtterance(plain);
+  utt.lang  = 'en-GB';
+  utt.rate  = 0.88;
+  utt.pitch = 1.1;
+
+  // Prefer a female English voice for Lyra's character
+  const voices = window.speechSynthesis.getVoices();
+  const female = voices.find(v =>
+    /en[-_]?(gb|au|ie|za|nz)/i.test(v.lang) &&
+    /female|fiona|karen|moira|tessa|hazel|serena/i.test(v.name)
+  ) || voices.find(v =>
+    /en/i.test(v.lang) &&
+    /female|samantha|zira|google.*female/i.test(v.name)
+  );
+  if (female) utt.voice = female;
+
+  window.speechSynthesis.speak(utt);
+}
+
+function tutToggleSpeech() {
+  _tutSpeechOn = !_tutSpeechOn;
+  const btn = document.getElementById('tut-btn-speak');
+  btn.textContent = _tutSpeechOn ? '🔊' : '🔇';
+  btn.classList.toggle('muted', !_tutSpeechOn);
+  if (!_tutSpeechOn) {
+    window.speechSynthesis.cancel();
+  } else {
+    tutSpeak(TUTORIAL_STEPS[_tutStep].text);
+  }
+}
 
 function getTutCtx(container, W, H) {
   if (!_tutVfRend || _tutVfW !== W || _tutVfH !== H) {
@@ -3034,6 +3089,7 @@ function renderTutStep() {
 
   document.getElementById('tut-progress').textContent = `${_tutStep + 1} / ${total}`;
   document.getElementById('tut-bubble').innerHTML = step.text;
+  tutSpeak(step.text);
 
   const wrap = document.getElementById('tut-staff-wrap');
   if (step.render) {
@@ -3068,6 +3124,7 @@ function showScreen(name) {
 function showMenu() {
   cancelAll();
   stopTimer();
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
   gs.running = false;
   renderLB('lb-menu');
   showScreen('menu');
@@ -3083,6 +3140,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('preview-m').innerHTML = PLAYER_SPRITES.m;
   document.getElementById('preview-f').innerHTML = PLAYER_SPRITES.f;
   initSfx();
+  // Pre-load speech voices so they're available when the tutorial opens
+  if (window.speechSynthesis) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  }
 });
 
 // Music starts on first user interaction (browser autoplay policy)
