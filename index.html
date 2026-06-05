@@ -2754,21 +2754,68 @@ function tutRenderChord(clef, keys) {
   voice.draw(ctx, stave);
 }
 
+// Render a row of harmonic intervals: items = [{lower, upper, lAcc, uAcc, label}]
+function tutRenderIntervalSet(clef, items) {
+  const container = document.getElementById('tut-staff-container');
+  const W = tutStaveW(container);
+  const ctx = getTutCtx(container, W, 170);
+  const stave = new VF.Stave(10, 22, W - 20);
+  stave.addClef(clef);
+  stave.setContext(ctx).draw();
+  const notes = items.map(it => {
+    const n = new VF.StaveNote({ keys: [it.lower, it.upper], duration: 'q', clef, autoStem: false });
+    n.setStemDirection(-1);
+    if (it.lAcc) n.addModifier(new VF.Accidental(it.lAcc), 0);
+    if (it.uAcc) n.addModifier(new VF.Accidental(it.uAcc), 1);
+    if (it.label) n.addModifier(
+      new VF.Annotation(it.label).setFont('Arial', 9, 'bold').setVerticalJustification(3), 0);
+    return n;
+  });
+  const voice = new VF.Voice({ numBeats: notes.length, beatValue: 4 }).setStrict(false);
+  voice.addTickables(notes);
+  new VF.Formatter().joinVoices([voice]).formatToStave([voice], stave);
+  voice.draw(ctx, stave);
+}
+
+// Render a row of chords: items = [{keys, accs: [null|'#'|'b',...], label}]
+function tutRenderChordSet(clef, items) {
+  const container = document.getElementById('tut-staff-container');
+  const W = tutStaveW(container);
+  const ctx = getTutCtx(container, W, 170);
+  const stave = new VF.Stave(10, 22, W - 20);
+  stave.addClef(clef);
+  stave.setContext(ctx).draw();
+  const notes = items.map(it => {
+    const n = new VF.StaveNote({ keys: it.keys, duration: 'q', clef, autoStem: false });
+    n.setStemDirection(-1);
+    if (it.accs) it.accs.forEach((a, i) => { if (a) n.addModifier(new VF.Accidental(a), i); });
+    if (it.label) n.addModifier(
+      new VF.Annotation(it.label).setFont('Arial', 9, 'bold').setVerticalJustification(3), 0);
+    return n;
+  });
+  const voice = new VF.Voice({ numBeats: notes.length, beatValue: 4 }).setStrict(false);
+  voice.addTickables(notes);
+  new VF.Formatter().joinVoices([voice]).formatToStave([voice], stave);
+  voice.draw(ctx, stave);
+}
+
 const TUTORIAL_STEPS = [
+  // ── Section 1: The Game ─────────────────────────────────────
   {
     title: 'Welcome',
-    text: 'Ah, a young adventurer! I am <strong>Elder Lyra</strong>, keeper of musical knowledge. In Note Quest you battle enemies by reading music notation. Answer correctly to deal damage — hesitate or err, and the enemy strikes back. Let me guide you through everything you need to know.',
+    text: 'Ah, a young adventurer! I am <strong>Elder Lyra</strong>, keeper of musical knowledge. In Note Quest you battle enemies by reading music notation. Answer correctly to deal damage — hesitate or err, and the enemy strikes back. Let me guide you through everything you need.',
     label: null, render: null,
   },
   {
     title: 'How to Play',
-    text: 'Each round you see a musical question — a note, interval, chord, or key signature — displayed on a stave. Your <strong>hand of cards</strong> shows possible answers. Tap the correct card before the <strong>timer</strong> runs out. Beat every wave to win the quest!',
+    text: 'Each round you see a question — a <strong>note, key signature, interval, or chord</strong> — on a stave. Your <strong>hand of cards</strong> shows possible answers. Tap the correct card before the <strong>timer</strong> runs out. Beat every wave to win the quest!',
     label: null, render: null,
   },
+  // ── Section 2: Reading Notes ────────────────────────────────
   {
     title: 'The Musical Stave',
-    text: 'Music is written on a <strong>stave</strong> — five horizontal lines with four spaces between them. Notes sit on lines or in the spaces. The higher a note sits, the higher it sounds. A clef symbol at the left tells you exactly which notes each position means.',
-    label: 'The five lines and four spaces of the stave',
+    text: 'Music is written on a <strong>stave</strong> — five horizontal lines with four spaces. Notes sit on lines or in the spaces; the higher the note, the higher the pitch. A <strong>clef</strong> symbol at the left tells you exactly which notes each position represents.',
+    label: 'All positions on the treble stave',
     render: () => tutRenderLabeled('treble',
       ['e/4','f/4','g/4','a/4','b/4','c/5','d/5','e/5','f/5'],
       ['E','F','G','A','B','C','D','E','F']),
@@ -2778,54 +2825,191 @@ const TUTORIAL_STEPS = [
     text: 'The <strong>treble clef</strong> (𝄞) curls around the second line — G4. The five lines from bottom to top are <strong>E G B D F</strong>. Remember: <strong>Every Good Boy Deserves Football!</strong>',
     label: 'Treble clef lines: E · G · B · D · F',
     render: () => tutRenderLabeled('treble',
-      ['e/4','g/4','b/4','d/5','f/5'],
-      ['E','G','B','D','F']),
+      ['e/4','g/4','b/4','d/5','f/5'], ['E','G','B','D','F']),
   },
   {
     title: 'Treble Clef — Spaces',
-    text: 'The four spaces in the treble clef, from bottom to top, spell the word <strong>FACE</strong> — F, A, C, E. Simple to remember!',
+    text: 'The four spaces in the treble clef, bottom to top, spell the word <strong>FACE</strong> — F, A, C, E. Simple to remember!',
     label: 'Treble clef spaces: F · A · C · E',
     render: () => tutRenderLabeled('treble',
-      ['f/4','a/4','c/5','e/5'],
-      ['F','A','C','E']),
+      ['f/4','a/4','c/5','e/5'], ['F','A','C','E']),
   },
   {
     title: 'Bass Clef',
-    text: 'The <strong>bass clef</strong> (𝄢) dots surround the F line — fourth from the bottom. Lines are <strong>G B D F A</strong> (Good Boys Deserve Fun Always). Spaces are <strong>A C E G</strong> (All Cows Eat Grass).',
+    text: 'The <strong>bass clef</strong> (𝄢) dots surround the F line — fourth from the bottom. Lines: <strong>G B D F A</strong> (Good Boys Deserve Fun Always). Spaces: <strong>A C E G</strong> (All Cows Eat Grass).',
     label: 'Bass clef lines: G · B · D · F · A',
     render: () => tutRenderLabeled('bass',
-      ['g/2','b/2','d/3','f/3','a/3'],
-      ['G','B','D','F','A']),
+      ['g/2','b/2','d/3','f/3','a/3'], ['G','B','D','F','A']),
   },
   {
     title: 'Alto Clef',
     text: 'The <strong>alto clef</strong> (𝄡) is a C clef — wherever it points, that line is <strong>Middle C</strong> (C4). In the alto clef, Middle C sits on the middle (third) line. You will meet this clef in the most challenging battles!',
-    label: 'Alto clef — Middle C on the middle line',
+    label: 'Alto clef — Middle C (C*) on the middle line',
     render: () => tutRenderLabeled('alto',
       ['f/3','g/3','a/3','b/3','c/4','d/4','e/4','f/4','g/4'],
       ['F','G','A','B','C*','D','E','F','G']),
   },
+  // ── Section 3: Key Signatures ───────────────────────────────
   {
     title: 'Key Signatures',
-    text: 'A <strong>key signature</strong> sits between the clef and the time signature. It shows which notes are permanently sharp or flat throughout the piece. Sharps are added in order: <strong>F C G D A E B</strong>. Flats reverse this: <strong>B E A D G C F</strong>.',
-    label: 'D major — 2 sharps (F♯ and C♯)',
+    text: 'A <strong>key signature</strong> sits between the clef and the time signature. It shows which notes are permanently sharp or flat. <strong>C major</strong> has no sharps or flats — a completely blank key signature.',
+    label: 'C major — no sharps or flats',
+    render: () => tutRenderKeySig('treble', 'C'),
+  },
+  {
+    title: 'Sharp Major Keys',
+    text: 'Sharps are added one at a time in order: <strong>F♯ C♯ G♯ D♯ A♯ E♯ B♯</strong>. The major key is always one semitone above the last sharp. Keys: <strong>G (1♯) · D (2♯) · A (3♯) · E (4♯) · B (5♯) · F♯ (6♯)</strong>.',
+    label: 'A major — 3 sharps (F♯, C♯, G♯)',
+    render: () => tutRenderKeySig('treble', 'A'),
+  },
+  {
+    title: 'Flat Major Keys',
+    text: 'Flats are added in reverse order: <strong>B♭ E♭ A♭ D♭ G♭ C♭ F♭</strong>. The major key is always the second-to-last flat added. Keys: <strong>F (1♭) · B♭ (2♭) · E♭ (3♭) · A♭ (4♭) · D♭ (5♭) · G♭ (6♭)</strong>.',
+    label: 'B♭ major — 2 flats (B♭, E♭)',
+    render: () => tutRenderKeySig('treble', 'Bb'),
+  },
+  {
+    title: 'Relative Minor',
+    text: 'Every major key has a <strong>relative minor</strong> that shares its key signature. Find it by going a minor 3rd (3 semitones) down from the major tonic. <strong>G major → E minor · D major → B minor · F major → D minor</strong>.',
+    label: 'G major / E minor — 1 sharp (F♯)',
+    render: () => tutRenderKeySig('treble', 'G'),
+  },
+  {
+    title: 'Minor Sharp Keys',
+    text: 'The minor keys with sharps are relative minors of the sharp major keys: <strong>Am (0♯) · Em (1♯) · Bm (2♯) · F♯m (3♯) · C♯m (4♯) · G♯m (5♯)</strong>. Their key signatures look identical to their relative majors.',
+    label: 'D major / B minor — 2 sharps',
     render: () => tutRenderKeySig('treble', 'D'),
   },
   {
-    title: 'Intervals',
-    text: 'An <strong>interval</strong> is the distance between two notes. Count both notes and everything between them — C to G counts C D E F G, making it a <strong>5th</strong>. The quality (major, minor, perfect) depends on the exact number of semitones.',
-    label: 'A Perfect 5th — C to G',
-    render: () => tutRenderInterval('treble', 'c/4', 'g/4'),
+    title: 'Minor Flat Keys',
+    text: 'The minor keys with flats: <strong>Dm (1♭) · Gm (2♭) · Cm (3♭) · Fm (4♭) · B♭m (5♭) · E♭m (6♭)</strong>. In the game you will always be told whether to identify major or minor!',
+    label: 'B♭ major / G minor — 2 flats',
+    render: () => tutRenderKeySig('treble', 'Bb'),
+  },
+  // ── Section 4: Intervals ────────────────────────────────────
+  {
+    title: 'Counting Intervals',
+    text: 'An <strong>interval</strong> is the distance between two notes. Count every note from bottom to top, including both ends — C up to E counts C(1) D(2) E(3) = a <strong>3rd</strong>. The <strong>quality</strong> (major, minor, perfect) depends on the exact number of semitones.',
+    label: 'A Major 3rd — C to E (4 semitones)',
+    render: () => tutRenderInterval('treble', 'c/4', 'e/4'),
   },
   {
-    title: 'Chords',
-    text: 'A <strong>chord</strong> is three or more notes sounding together, stacked in thirds. A <strong>major triad</strong> sounds bright and open; a <strong>minor triad</strong> sounds darker. You will also encounter diminished and augmented chords in later battles!',
-    label: 'C major triad — C · E · G',
+    title: 'Perfect Intervals',
+    text: '<strong>Perfect intervals</strong> are the most stable and consonant. <strong>P4</strong> = 5 semitones · <strong>P5</strong> = 7 semitones · <strong>P8</strong> (octave) = 12 semitones. They can only be perfect, augmented, or diminished — never major or minor.',
+    label: 'Perfect 4th · Perfect 5th · Perfect 8ve',
+    render: () => tutRenderIntervalSet('treble', [
+      { lower:'c/4', upper:'f/4', label:'P4' },
+      { lower:'c/4', upper:'g/4', label:'P5' },
+      { lower:'c/4', upper:'c/5', label:'P8' },
+    ]),
+  },
+  {
+    title: 'Major Intervals',
+    text: '<strong>Major intervals</strong> come from the notes of the major scale above the root: <strong>M2</strong> (2 semitones) · <strong>M3</strong> (4) · <strong>M6</strong> (9) · <strong>M7</strong> (11). Raise a major interval by a semitone and it becomes <strong>augmented</strong>.',
+    label: 'Major 2nd · 3rd · 6th · 7th (all from C)',
+    render: () => tutRenderIntervalSet('treble', [
+      { lower:'c/4', upper:'d/4', label:'M2' },
+      { lower:'c/4', upper:'e/4', label:'M3' },
+      { lower:'c/4', upper:'a/4', label:'M6' },
+      { lower:'c/4', upper:'b/4', label:'M7' },
+    ]),
+  },
+  {
+    title: 'Minor Intervals',
+    text: '<strong>Minor intervals</strong> are one semitone smaller than major: <strong>m2</strong> (1 semitone) · <strong>m3</strong> (3) · <strong>m6</strong> (8) · <strong>m7</strong> (10). They give minor keys their characteristic darker, more expressive colour.',
+    label: 'Minor 2nd · 3rd · 6th · 7th (all from C)',
+    render: () => tutRenderIntervalSet('treble', [
+      { lower:'c/4', upper:'d/4', uAcc:'b', label:'m2' },
+      { lower:'c/4', upper:'e/4', uAcc:'b', label:'m3' },
+      { lower:'c/4', upper:'a/4', uAcc:'b', label:'m6' },
+      { lower:'c/4', upper:'b/4', uAcc:'b', label:'m7' },
+    ]),
+  },
+  {
+    title: 'Augmented & Diminished',
+    text: 'Raising a perfect or major interval by a semitone gives an <strong>augmented</strong> interval. Lowering a perfect or minor by a semitone gives a <strong>diminished</strong> one. The <strong>tritone</strong> (6 semitones) is both an Aug 4th and a Dim 5th — tense and unstable.',
+    label: 'Augmented 4th (F–B) · Diminished 5th (B–F)',
+    render: () => tutRenderIntervalSet('treble', [
+      { lower:'f/4', upper:'b/4', label:'A4' },
+      { lower:'b/4', upper:'f/5', label:'d5' },
+    ]),
+  },
+  // ── Section 5: Chords ───────────────────────────────────────
+  {
+    title: 'Triads',
+    text: 'A <strong>triad</strong> is a three-note chord built by stacking two thirds. The bottom note is the <strong>root</strong>, the middle is the <strong>third</strong>, and the top is the <strong>fifth</strong>. The type of thirds determines whether the chord is major, minor, diminished, or augmented.',
+    label: 'C major triad — root · third · fifth',
     render: () => tutRenderChord('treble', ['c/4','e/4','g/4']),
   },
   {
+    title: 'Major & Minor Triads',
+    text: 'A <strong>major triad</strong> has a major 3rd on the bottom (4 semitones) and a minor 3rd on top (3). A <strong>minor triad</strong> reverses this — minor 3rd on the bottom, major 3rd on top. Major sounds bright; minor sounds darker.',
+    label: 'C major (C–E–G) · C minor (C–E♭–G)',
+    render: () => tutRenderChordSet('treble', [
+      { keys:['c/4','e/4','g/4'], accs:[null,null,null],  label:'Maj' },
+      { keys:['c/4','e/4','g/4'], accs:[null,'b',null],   label:'Min' },
+    ]),
+  },
+  {
+    title: 'Diminished & Augmented',
+    text: 'A <strong>diminished triad</strong> has two minor 3rds stacked (sounds tense). An <strong>augmented triad</strong> has two major 3rds (sounds eerie and unresolved). Both appear in later waves — recognise them by their stacked thirds!',
+    label: 'B diminished (B–D–F) · C augmented (C–E–G♯)',
+    render: () => tutRenderChordSet('treble', [
+      { keys:['b/4','d/5','f/5'], accs:null,             label:'Dim' },
+      { keys:['c/4','e/4','g/4'], accs:[null,null,'#'],  label:'Aug' },
+    ]),
+  },
+  {
+    title: 'Roman Numerals — Major Keys',
+    text: 'Chords are labelled with <strong>Roman numerals</strong> by scale degree. <strong>Uppercase = major, lowercase = minor, ° = diminished</strong>. In C major: <strong>I · ii · iii · IV · V · vi · vii°</strong>. The I, IV, and V are the three primary chords of tonal music.',
+    label: 'All seven diatonic chords in C major',
+    render: () => tutRenderChordSet('treble', [
+      { keys:['c/4','e/4','g/4'], accs:null, label:'I'    },
+      { keys:['d/4','f/4','a/4'], accs:null, label:'ii'   },
+      { keys:['e/4','g/4','b/4'], accs:null, label:'iii'  },
+      { keys:['f/4','a/4','c/5'], accs:null, label:'IV'   },
+      { keys:['g/4','b/4','d/5'], accs:null, label:'V'    },
+      { keys:['a/4','c/5','e/5'], accs:null, label:'vi'   },
+      { keys:['b/4','d/5','f/5'], accs:null, label:'vii°' },
+    ]),
+  },
+  {
+    title: 'Roman Numerals — Minor Keys',
+    text: 'In a <strong>minor key</strong> the pattern changes: <strong>i · ii° · III · iv · V · VI · VII</strong>. In <strong>harmonic minor</strong>, the 7th scale degree is raised, turning the v chord into a major <strong>V</strong> — creating a strong pull back to i.',
+    label: 'Diatonic chords in A minor (harmonic V)',
+    render: () => tutRenderChordSet('bass', [
+      { keys:['a/2','c/3','e/3'], accs:null,          label:'i'   },
+      { keys:['b/2','d/3','f/3'], accs:null,          label:'ii°' },
+      { keys:['c/3','e/3','g/3'], accs:null,          label:'III' },
+      { keys:['d/3','f/3','a/3'], accs:null,          label:'iv'  },
+      { keys:['e/3','g/3','b/3'], accs:[null,'#',null],label:'V'  },
+      { keys:['f/3','a/3','c/4'], accs:null,          label:'VI'  },
+      { keys:['g/3','b/3','d/4'], accs:null,          label:'VII' },
+    ]),
+  },
+  {
+    title: 'Chord Inversions',
+    text: 'A chord is in <strong>root position</strong> when the root is the lowest note. <strong>First inversion</strong> has the 3rd in the bass; <strong>second inversion</strong> has the 5th in the bass. Inversions change the bass line and the stability of the chord.',
+    label: 'C major: root position · 1st inversion · 2nd inversion',
+    render: () => tutRenderChordSet('treble', [
+      { keys:['c/4','e/4','g/4'], accs:null, label:'Root' },
+      { keys:['e/4','g/4','c/5'], accs:null, label:'1st'  },
+      { keys:['g/4','c/5','e/5'], accs:null, label:'2nd'  },
+    ]),
+  },
+  {
+    title: 'Figured Bass Symbols',
+    text: '<strong>Figured bass</strong> symbols show inversions below the bass note. Triads: root = ⁵₃ (often omitted) · 1st inv = ⁶ · 2nd inv = ⁶₄. Seventh chords: root = ⁷ · 1st inv = ⁶₅ · 2nd inv = ⁴₃ · 3rd inv = ².',
+    label: 'Figured bass: 5/3 (root) · 6/3 (1st inv) · 6/4 (2nd inv)',
+    render: () => tutRenderChordSet('treble', [
+      { keys:['c/4','e/4','g/4'], accs:null, label:'5/3' },
+      { keys:['e/4','g/4','c/5'], accs:null, label:'6/3' },
+      { keys:['g/4','c/5','e/5'], accs:null, label:'6/4' },
+    ]),
+  },
+  {
     title: 'Ready!',
-    text: 'You have the wisdom of a true musician! Choose a quest from the menu, pick your adventurer, and venture forth. Read swiftly, answer boldly — and may the music guide your blade. <strong>Good luck!</strong>',
+    text: 'You now have the knowledge of a true musician! Choose your quest, pick your adventurer, and venture forth. <strong>Read swiftly, answer boldly</strong> — may the music guide your blade. Good luck!',
     label: null, render: null,
   },
 ];
