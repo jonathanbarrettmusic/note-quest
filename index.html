@@ -2688,8 +2688,11 @@ function tutStaveW(container) {
 function tutRenderLabeled(clef, keys, labels, H) {
   const container = document.getElementById('tut-staff-container');
   const W = tutStaveW(container);
-  const ctx = getTutCtx(container, W, H || (clef === 'bass' ? 140 : 120));
-  const stave = new VF.Stave(10, 20, W - 20);
+  // Bass notes can have ledger lines below; treble labels on low notes also need room.
+  // 180px for bass, 170px for treble gives ~110px below the bottom staff line.
+  const h = H || (clef === 'bass' ? 180 : 170);
+  const ctx = getTutCtx(container, W, h);
+  const stave = new VF.Stave(10, 22, W - 20);
   stave.addClef(clef);
   stave.setContext(ctx).draw();
   const notes = keys.map((k, i) => {
@@ -2715,8 +2718,8 @@ function tutRenderLabeled(clef, keys, labels, H) {
 function tutRenderKeySig(clef, vfKey) {
   const container = document.getElementById('tut-staff-container');
   const W = tutStaveW(container);
-  const ctx = getTutCtx(container, W, 120);
-  const stave = new VF.Stave(10, 20, W - 20);
+  const ctx = getTutCtx(container, W, 110);
+  const stave = new VF.Stave(10, 22, W - 20);
   stave.addClef(clef).addKeySignature(vfKey);
   stave.setContext(ctx).draw();
 }
@@ -2724,8 +2727,8 @@ function tutRenderKeySig(clef, vfKey) {
 function tutRenderInterval(clef, lower, upper) {
   const container = document.getElementById('tut-staff-container');
   const W = tutStaveW(container);
-  const ctx = getTutCtx(container, W, 120);
-  const stave = new VF.Stave(10, 20, W - 20);
+  const ctx = getTutCtx(container, W, 110);
+  const stave = new VF.Stave(10, 22, W - 20);
   stave.addClef(clef);
   stave.setContext(ctx).draw();
   const n = new VF.StaveNote({ keys: [lower, upper], duration: 'w', clef, autoStem: false });
@@ -2739,8 +2742,8 @@ function tutRenderInterval(clef, lower, upper) {
 function tutRenderChord(clef, keys) {
   const container = document.getElementById('tut-staff-container');
   const W = tutStaveW(container);
-  const ctx = getTutCtx(container, W, 120);
-  const stave = new VF.Stave(10, 20, W - 20);
+  const ctx = getTutCtx(container, W, 110);
+  const stave = new VF.Stave(10, 22, W - 20);
   stave.addClef(clef);
   stave.setContext(ctx).draw();
   const n = new VF.StaveNote({ keys, duration: 'w', clef, autoStem: false });
@@ -2792,7 +2795,7 @@ const TUTORIAL_STEPS = [
     label: 'Bass clef lines: G · B · D · F · A',
     render: () => tutRenderLabeled('bass',
       ['g/2','b/2','d/3','f/3','a/3'],
-      ['G','B','D','F','A'], 140),
+      ['G','B','D','F','A']),
   },
   {
     title: 'Alto Clef',
