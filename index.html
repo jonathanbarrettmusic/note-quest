@@ -2718,7 +2718,7 @@ function tutRenderLabeled(clef, keys, labels, H) {
 function tutRenderKeySig(clef, vfKey) {
   const container = document.getElementById('tut-staff-container');
   const W = tutStaveW(container);
-  const ctx = getTutCtx(container, W, 110);
+  const ctx = getTutCtx(container, W, 160);
   const stave = new VF.Stave(10, 22, W - 20);
   stave.addClef(clef).addKeySignature(vfKey);
   stave.setContext(ctx).draw();
@@ -2727,7 +2727,7 @@ function tutRenderKeySig(clef, vfKey) {
 function tutRenderInterval(clef, lower, upper) {
   const container = document.getElementById('tut-staff-container');
   const W = tutStaveW(container);
-  const ctx = getTutCtx(container, W, 110);
+  const ctx = getTutCtx(container, W, 160);
   const stave = new VF.Stave(10, 22, W - 20);
   stave.addClef(clef);
   stave.setContext(ctx).draw();
@@ -2742,7 +2742,7 @@ function tutRenderInterval(clef, lower, upper) {
 function tutRenderChord(clef, keys) {
   const container = document.getElementById('tut-staff-container');
   const W = tutStaveW(container);
-  const ctx = getTutCtx(container, W, 110);
+  const ctx = getTutCtx(container, W, 160);
   const stave = new VF.Stave(10, 22, W - 20);
   stave.addClef(clef);
   stave.setContext(ctx).draw();
