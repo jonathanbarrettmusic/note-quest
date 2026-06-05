@@ -604,6 +604,52 @@
     .mode-card:hover   { border-color: var(--gold); }
     .mode-card-name    { font-size: 1rem; font-weight: 800; margin-bottom: .25rem; }
     .mode-card-desc    { font-size: .78rem; color: var(--text-dim); }
+    .mode-card.tutorial-card { border-color: rgba(167,139,250,.35); background: rgba(167,139,250,.07); }
+    .mode-card.tutorial-card:hover { border-color: #a78bfa; }
+
+    /* ════════════ TUTORIAL ════════════ */
+    #screen-tutorial {
+      align-items: flex-start;
+      padding: 1rem 1.25rem 1.5rem;
+      gap: .85rem;
+      overflow-y: auto;
+    }
+    .tut-header {
+      display: flex; justify-content: space-between; align-items: center;
+      width: 100%;
+    }
+    .tut-title { font-size: .95rem; font-weight: 800; color: #a78bfa; }
+    .tut-progress { font-size: .78rem; color: var(--text-dim); }
+    .tut-lyra-row {
+      display: flex; gap: .85rem; align-items: flex-start; width: 100%;
+    }
+    .tut-lyra-sprite { width: 72px; height: 90px; flex-shrink: 0; }
+    .tut-lyra-sprite svg { width: 72px; height: 90px; display: block; }
+    .tut-bubble {
+      flex: 1;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 14px 14px 14px 4px;
+      padding: .85rem .9rem;
+      font-size: .87rem;
+      line-height: 1.6;
+      color: var(--text);
+    }
+    .tut-bubble strong { color: #a78bfa; font-weight: 700; }
+    .tut-staff-wrap {
+      width: 100%;
+      background: var(--card-bg);
+      border-radius: var(--r);
+      padding: .6rem .5rem .4rem;
+    }
+    .tut-staff-label {
+      font-size: .72rem; color: #555; text-align: center;
+      margin-bottom: .2rem; font-style: italic;
+    }
+    #tut-staff-container { width: 100%; }
+    .tut-nav { display: flex; gap: .75rem; width: 100%; }
+    .tut-nav .btn { flex: 1; }
+    .tut-nav .btn:disabled { opacity: .3; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -717,6 +763,27 @@
   <input class="name-input" id="vic-name" placeholder="Enter your name" maxlength="20">
   <button class="btn btn-gold" onclick="submitScore(true)">🏆 Submit Score</button>
   <button class="btn btn-ghost" onclick="showMenu()">Menu</button>
+</div>
+
+<!-- ═══ TUTORIAL ═══ -->
+<div id="screen-tutorial" class="screen">
+  <div class="tut-header">
+    <span class="tut-title">📖 Tutorial — Elder Lyra</span>
+    <span class="tut-progress" id="tut-progress">1 / 10</span>
+  </div>
+  <div class="tut-lyra-row">
+    <div class="tut-lyra-sprite" id="tut-lyra-sprite"></div>
+    <div class="tut-bubble" id="tut-bubble"></div>
+  </div>
+  <div class="tut-staff-wrap" id="tut-staff-wrap" style="display:none">
+    <div class="tut-staff-label" id="tut-staff-label"></div>
+    <div id="tut-staff-container"></div>
+  </div>
+  <div class="tut-nav">
+    <button class="btn btn-ghost" id="tut-btn-back" onclick="tutNav(-1)">← Back</button>
+    <button class="btn btn-primary" id="tut-btn-next" onclick="tutNav(1)">Next →</button>
+  </div>
+  <button class="btn btn-ghost" onclick="showMenu()" style="font-size:.82rem;opacity:.7">✕ Exit Tutorial</button>
 </div>
 
 <script>
@@ -1222,6 +1289,57 @@ f: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 120">
 <circle cx="17" cy="68" r="3" fill="#e9d5ff" opacity=".6"/>
 </svg>`,
 };
+
+// ════════════════════════════════════════════════════════════
+//  ELDER LYRA SPRITE
+// ════════════════════════════════════════════════════════════
+const LYRA_SPRITE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 90">
+<!-- shadow -->
+<ellipse cx="36" cy="87" rx="16" ry="3" fill="rgba(0,0,0,.3)"/>
+<!-- robe lower -->
+<path d="M18 58 Q14 88 22 86 L36 83 L50 86 Q58 88 54 58Z" fill="#4c1d95"/>
+<!-- robe belt -->
+<rect x="22" y="55" width="28" height="5" rx="2" fill="#6d28d9" opacity=".7"/>
+<!-- robe body -->
+<rect x="20" y="32" width="32" height="28" rx="6" fill="#5b21b6"/>
+<!-- sleeves -->
+<path d="M20 35 Q8 40 10 50 Q12 54 18 52 L20 42Z" fill="#4c1d95"/>
+<path d="M52 35 Q64 40 62 50 Q60 54 54 52 L52 42Z" fill="#4c1d95"/>
+<!-- hands -->
+<ellipse cx="12" cy="52" rx="5" ry="4" fill="#f5c882"/>
+<ellipse cx="60" cy="52" rx="5" ry="4" fill="#f5c882"/>
+<!-- scroll in left hand -->
+<rect x="5" y="46" width="9" height="13" rx="3" fill="#fef9c3" stroke="#d97706" stroke-width="1"/>
+<text x="7" y="55" font-size="6" font-family="serif" fill="#92400e">𝄞</text>
+<!-- neck -->
+<rect x="31" y="22" width="10" height="12" rx="4" fill="#f5c882"/>
+<!-- head -->
+<ellipse cx="36" cy="18" rx="13" ry="14" fill="#f5c882"/>
+<!-- white hair -->
+<ellipse cx="36" cy="8" rx="13" ry="8" fill="#e2e8f0"/>
+<path d="M23 12 Q20 22 22 28 Q26 26 28 22Z" fill="#e2e8f0"/>
+<path d="M49 12 Q52 22 50 28 Q46 26 44 22Z" fill="#e2e8f0"/>
+<!-- eyes -->
+<ellipse cx="30" cy="17" rx="3" ry="2.5" fill="#fff"/>
+<ellipse cx="42" cy="17" rx="3" ry="2.5" fill="#fff"/>
+<circle cx="30.5" cy="17.5" r="1.8" fill="#4c1d95"/>
+<circle cx="42.5" cy="17.5" r="1.8" fill="#4c1d95"/>
+<circle cx="31" cy="17" r=".7" fill="#fff"/>
+<circle cx="43" cy="17" r=".7" fill="#fff"/>
+<!-- wise smile -->
+<path d="M31 23 Q36 27 41 23" stroke="#c2855a" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+<!-- eyebrows -->
+<path d="M27 13.5 Q30 12 33 13.5" stroke="#9ca3af" stroke-width="1.2" fill="none"/>
+<path d="M39 13.5 Q42 12 45 13.5" stroke="#9ca3af" stroke-width="1.2" fill="none"/>
+<!-- spectacles -->
+<circle cx="30" cy="17" r="4" fill="none" stroke="#92400e" stroke-width=".9" opacity=".7"/>
+<circle cx="42" cy="17" r="4" fill="none" stroke="#92400e" stroke-width=".9" opacity=".7"/>
+<line x1="34" y1="17" x2="38" y2="17" stroke="#92400e" stroke-width=".9" opacity=".7"/>
+<!-- staff glow -->
+<circle cx="60" cy="44" r="7" fill="#a78bfa" opacity=".25"/>
+<circle cx="60" cy="44" r="4" fill="#c4b5fd" opacity=".4"/>
+<text x="56.5" y="47.5" font-size="7" font-family="serif" fill="#fbbf24" font-weight="bold">♪</text>
+</svg>`;
 
 // ════════════════════════════════════════════════════════════
 //  AVATAR STATS
@@ -1836,7 +1954,7 @@ const KEY_SIGS_MODULE = {
   check(question, name) { return name === question.answer; },
 };
 
-const MODULES = [NOTE_READING_MODULE, INTERVALS_MODULE, CHORDS_MODULE, KEY_SIGS_MODULE];
+const MODULES = [NOTE_READING_MODULE, KEY_SIGS_MODULE, INTERVALS_MODULE, CHORDS_MODULE];
 
 const PLAYER_DAMAGE = 30;
 
@@ -2425,7 +2543,12 @@ function setEnvironment(env) {
 
 function showModeSelect() {
   const grid = document.getElementById('mode-grid');
-  grid.innerHTML = MODULES.map(m => `
+  const tutCard = `
+    <div class="mode-card tutorial-card" onclick="showTutorial()">
+      <div class="mode-card-name">📖 Tutorial</div>
+      <div class="mode-card-desc">Learn to read notes, key signatures, intervals &amp; chords with Elder Lyra</div>
+    </div>`;
+  grid.innerHTML = tutCard + MODULES.map(m => `
     <div class="mode-card" onclick="selectModule('${m.id}')">
       <div class="mode-card-name">${m.name}</div>
       <div class="mode-card-desc">${m.description}</div>
@@ -2536,6 +2659,215 @@ function renderLB(containerId) {
           <td class="lb-score">${e.score.toLocaleString()}</td>
         </tr>`).join('')}
     </table>`;
+}
+
+// ════════════════════════════════════════════════════════════
+//  TUTORIAL
+// ════════════════════════════════════════════════════════════
+let _tutStep = 0;
+let _tutVfRend = null, _tutVfCtx = null, _tutVfW = 0, _tutVfH = 0;
+
+function getTutCtx(container, W, H) {
+  if (!_tutVfRend || _tutVfW !== W || _tutVfH !== H) {
+    container.innerHTML = '';
+    _tutVfRend = new VF.Renderer(container, VF.Renderer.Backends.SVG);
+    _tutVfRend.resize(W, H);
+    _tutVfCtx = _tutVfRend.getContext();
+    _tutVfW = W; _tutVfH = H;
+  } else {
+    _tutVfCtx.clear();
+  }
+  _tutVfCtx.setFont('Arial', 11);
+  return _tutVfCtx;
+}
+
+function tutStaveW(container) {
+  return Math.min((container.parentElement?.clientWidth || 320) - 16, 320);
+}
+
+function tutRenderLabeled(clef, keys, labels, H) {
+  const container = document.getElementById('tut-staff-container');
+  const W = tutStaveW(container);
+  const ctx = getTutCtx(container, W, H || (clef === 'bass' ? 140 : 120));
+  const stave = new VF.Stave(10, 20, W - 20);
+  stave.addClef(clef);
+  stave.setContext(ctx).draw();
+  const notes = keys.map((k, i) => {
+    const n = new VF.StaveNote({ keys: [k], duration: 'q', clef, autoStem: false });
+    n.setStemDirection(-1);
+    if (labels && labels[i]) {
+      n.addModifier(
+        new VF.Annotation(labels[i])
+          .setFont('Arial', 10, 'bold')
+          .setVerticalJustification(3),
+        0
+      );
+    }
+    return n;
+  });
+  const voice = new VF.Voice({ numBeats: notes.length, beatValue: 4 }).setStrict(false);
+  voice.addTickables(notes);
+  new VF.Formatter().joinVoices([voice]).formatToStave([voice], stave);
+  VF.Accidental.applyAccidentals([voice], 'C');
+  voice.draw(ctx, stave);
+}
+
+function tutRenderKeySig(clef, vfKey) {
+  const container = document.getElementById('tut-staff-container');
+  const W = tutStaveW(container);
+  const ctx = getTutCtx(container, W, 120);
+  const stave = new VF.Stave(10, 20, W - 20);
+  stave.addClef(clef).addKeySignature(vfKey);
+  stave.setContext(ctx).draw();
+}
+
+function tutRenderInterval(clef, lower, upper) {
+  const container = document.getElementById('tut-staff-container');
+  const W = tutStaveW(container);
+  const ctx = getTutCtx(container, W, 120);
+  const stave = new VF.Stave(10, 20, W - 20);
+  stave.addClef(clef);
+  stave.setContext(ctx).draw();
+  const n = new VF.StaveNote({ keys: [lower, upper], duration: 'w', clef, autoStem: false });
+  n.setStemDirection(-1);
+  const voice = new VF.Voice({ numBeats: 4, beatValue: 4 }).setStrict(false);
+  voice.addTickables([n]);
+  new VF.Formatter().joinVoices([voice]).formatToStave([voice], stave);
+  voice.draw(ctx, stave);
+}
+
+function tutRenderChord(clef, keys) {
+  const container = document.getElementById('tut-staff-container');
+  const W = tutStaveW(container);
+  const ctx = getTutCtx(container, W, 120);
+  const stave = new VF.Stave(10, 20, W - 20);
+  stave.addClef(clef);
+  stave.setContext(ctx).draw();
+  const n = new VF.StaveNote({ keys, duration: 'w', clef, autoStem: false });
+  n.setStemDirection(-1);
+  const voice = new VF.Voice({ numBeats: 4, beatValue: 4 }).setStrict(false);
+  voice.addTickables([n]);
+  new VF.Formatter().joinVoices([voice]).formatToStave([voice], stave);
+  voice.draw(ctx, stave);
+}
+
+const TUTORIAL_STEPS = [
+  {
+    title: 'Welcome',
+    text: 'Ah, a young adventurer! I am <strong>Elder Lyra</strong>, keeper of musical knowledge. In Note Quest you battle enemies by reading music notation. Answer correctly to deal damage — hesitate or err, and the enemy strikes back. Let me guide you through everything you need to know.',
+    label: null, render: null,
+  },
+  {
+    title: 'How to Play',
+    text: 'Each round you see a musical question — a note, interval, chord, or key signature — displayed on a stave. Your <strong>hand of cards</strong> shows possible answers. Tap the correct card before the <strong>timer</strong> runs out. Beat every wave to win the quest!',
+    label: null, render: null,
+  },
+  {
+    title: 'The Musical Stave',
+    text: 'Music is written on a <strong>stave</strong> — five horizontal lines with four spaces between them. Notes sit on lines or in the spaces. The higher a note sits, the higher it sounds. A clef symbol at the left tells you exactly which notes each position means.',
+    label: 'The five lines and four spaces of the stave',
+    render: () => tutRenderLabeled('treble',
+      ['e/4','f/4','g/4','a/4','b/4','c/5','d/5','e/5','f/5'],
+      ['E','F','G','A','B','C','D','E','F']),
+  },
+  {
+    title: 'Treble Clef — Lines',
+    text: 'The <strong>treble clef</strong> (𝄞) curls around the second line — G4. The five lines from bottom to top are <strong>E G B D F</strong>. Remember: <strong>Every Good Boy Deserves Football!</strong>',
+    label: 'Treble clef lines: E · G · B · D · F',
+    render: () => tutRenderLabeled('treble',
+      ['e/4','g/4','b/4','d/5','f/5'],
+      ['E','G','B','D','F']),
+  },
+  {
+    title: 'Treble Clef — Spaces',
+    text: 'The four spaces in the treble clef, from bottom to top, spell the word <strong>FACE</strong> — F, A, C, E. Simple to remember!',
+    label: 'Treble clef spaces: F · A · C · E',
+    render: () => tutRenderLabeled('treble',
+      ['f/4','a/4','c/5','e/5'],
+      ['F','A','C','E']),
+  },
+  {
+    title: 'Bass Clef',
+    text: 'The <strong>bass clef</strong> (𝄢) dots surround the F line — fourth from the bottom. Lines are <strong>G B D F A</strong> (Good Boys Deserve Fun Always). Spaces are <strong>A C E G</strong> (All Cows Eat Grass).',
+    label: 'Bass clef lines: G · B · D · F · A',
+    render: () => tutRenderLabeled('bass',
+      ['g/2','b/2','d/3','f/3','a/3'],
+      ['G','B','D','F','A'], 140),
+  },
+  {
+    title: 'Alto Clef',
+    text: 'The <strong>alto clef</strong> (𝄡) is a C clef — wherever it points, that line is <strong>Middle C</strong> (C4). In the alto clef, Middle C sits on the middle (third) line. You will meet this clef in the most challenging battles!',
+    label: 'Alto clef — Middle C on the middle line',
+    render: () => tutRenderLabeled('alto',
+      ['f/3','g/3','a/3','b/3','c/4','d/4','e/4','f/4','g/4'],
+      ['F','G','A','B','C*','D','E','F','G']),
+  },
+  {
+    title: 'Key Signatures',
+    text: 'A <strong>key signature</strong> sits between the clef and the time signature. It shows which notes are permanently sharp or flat throughout the piece. Sharps are added in order: <strong>F C G D A E B</strong>. Flats reverse this: <strong>B E A D G C F</strong>.',
+    label: 'D major — 2 sharps (F♯ and C♯)',
+    render: () => tutRenderKeySig('treble', 'D'),
+  },
+  {
+    title: 'Intervals',
+    text: 'An <strong>interval</strong> is the distance between two notes. Count both notes and everything between them — C to G counts C D E F G, making it a <strong>5th</strong>. The quality (major, minor, perfect) depends on the exact number of semitones.',
+    label: 'A Perfect 5th — C to G',
+    render: () => tutRenderInterval('treble', 'c/4', 'g/4'),
+  },
+  {
+    title: 'Chords',
+    text: 'A <strong>chord</strong> is three or more notes sounding together, stacked in thirds. A <strong>major triad</strong> sounds bright and open; a <strong>minor triad</strong> sounds darker. You will also encounter diminished and augmented chords in later battles!',
+    label: 'C major triad — C · E · G',
+    render: () => tutRenderChord('treble', ['c/4','e/4','g/4']),
+  },
+  {
+    title: 'Ready!',
+    text: 'You have the wisdom of a true musician! Choose a quest from the menu, pick your adventurer, and venture forth. Read swiftly, answer boldly — and may the music guide your blade. <strong>Good luck!</strong>',
+    label: null, render: null,
+  },
+];
+
+function showTutorial() {
+  _tutStep = 0;
+  _tutVfRend = null;
+  document.getElementById('tut-lyra-sprite').innerHTML = LYRA_SPRITE;
+  showScreen('tutorial');
+  playMusic('menu');
+  renderTutStep();
+}
+
+function tutNav(dir) {
+  _tutStep = Math.max(0, Math.min(TUTORIAL_STEPS.length - 1, _tutStep + dir));
+  renderTutStep();
+}
+
+function renderTutStep() {
+  const step = TUTORIAL_STEPS[_tutStep];
+  const total = TUTORIAL_STEPS.length;
+
+  document.getElementById('tut-progress').textContent = `${_tutStep + 1} / ${total}`;
+  document.getElementById('tut-bubble').innerHTML = step.text;
+
+  const wrap = document.getElementById('tut-staff-wrap');
+  if (step.render) {
+    wrap.style.display = 'block';
+    document.getElementById('tut-staff-label').textContent = step.label || '';
+    step.render();
+  } else {
+    wrap.style.display = 'none';
+  }
+
+  const back = document.getElementById('tut-btn-back');
+  const next = document.getElementById('tut-btn-next');
+  back.disabled = _tutStep === 0;
+
+  if (_tutStep === total - 1) {
+    next.textContent = '▶ Choose a Quest';
+    next.onclick = () => showModeSelect();
+  } else {
+    next.textContent = 'Next →';
+    next.onclick = () => tutNav(1);
+  }
 }
 
 // ════════════════════════════════════════════════════════════
