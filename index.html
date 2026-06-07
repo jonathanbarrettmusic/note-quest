@@ -2170,11 +2170,14 @@ function renderNote(clef, noteData) {
   const container = document.getElementById('staff-container');
 
   const W = Math.min(container.parentElement.clientWidth - 32, 380) || 320;
-  const H = 120;
+  // 200px gives ~100px below the bottom staff line, enough for notes
+  // 3+ ledger lines below (e.g. E3 in treble clef for guitar range).
+  const H = 200;
 
   const ctx = getCtx(container, W, H);
 
-  const stave = new VF.Stave(10, 18, W - 20);
+  // Y=28 keeps the clef/label clear at the top while maximising space below.
+  const stave = new VF.Stave(10, 28, W - 20);
   stave.addClef(clef);
   stave.setContext(ctx).draw();
 
