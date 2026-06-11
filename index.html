@@ -1728,28 +1728,37 @@ function bassWarriorPool(waveNum) {
   return notes;
 }
 
-const GUITAR_NOTE_POOL = {
-  treble: {
-    natural: [
-      { name:'E', key:'e/3', acc:null }, { name:'F', key:'f/3', acc:null },
-      { name:'G', key:'g/3', acc:null }, { name:'A', key:'a/3', acc:null },
-      { name:'B', key:'b/3', acc:null }, { name:'C', key:'c/4', acc:null },
-      { name:'D', key:'d/4', acc:null }, { name:'E', key:'e/4', acc:null },
-      { name:'F', key:'f/4', acc:null }, { name:'G', key:'g/4', acc:null },
-      { name:'A', key:'a/4', acc:null }, { name:'B', key:'b/4', acc:null },
-      { name:'C', key:'c/5', acc:null }, { name:'D', key:'d/5', acc:null },
-      { name:'E', key:'e/5', acc:null }, { name:'F', key:'f/5', acc:null },
-      { name:'G', key:'g/5', acc:null }, { name:'A', key:'a/5', acc:null },
-      { name:'B', key:'b/5', acc:null },
-    ],
-    accidental: [
-      { name:'F♯', key:'f/3', acc:'#' }, { name:'B♭', key:'b/3', acc:'b' },
-      { name:'F♯', key:'f/4', acc:'#' }, { name:'G♯', key:'g/4', acc:'#' },
-      { name:'B♭', key:'b/4', acc:'b' }, { name:'C♯', key:'c/5', acc:'#' },
-      { name:'E♭', key:'e/5', acc:'b' }, { name:'F♯', key:'f/5', acc:'#' },
-    ],
-  },
-};
+// Lyric Bard: treble clef only, progressive guitar range.
+// Starts on the most readable first-position notes (G4–D5), moves up to
+// G5, then introduces the lower open strings one by one, then fills in
+// the fretted notes between them.
+const LYRIC_BARD_TIERS = [
+  // tier 0 (waves 1-2): core range — open G string up to D on the B string
+  [{ name:'G', key:'g/4', acc:null }, { name:'A', key:'a/4', acc:null },
+   { name:'B', key:'b/4', acc:null }, { name:'C', key:'c/5', acc:null },
+   { name:'D', key:'d/5', acc:null }],
+  // tier 1 (waves 3-4): climb up to G5 on the high e string
+  [{ name:'E', key:'e/5', acc:null }, { name:'F', key:'f/5', acc:null },
+   { name:'G', key:'g/5', acc:null }],
+  // tier 2 (waves 5-6): upper register A5–B5
+  [{ name:'A', key:'a/5', acc:null }, { name:'B', key:'b/5', acc:null }],
+  // tier 3 (waves 7-8): 4th string open (D4) + fretted notes up to G4
+  [{ name:'D', key:'d/4', acc:null }, { name:'E', key:'e/4', acc:null },
+   { name:'F', key:'f/4', acc:null }],
+  // tier 4 (waves 9-10): 5th string open (A3) + fretted notes up to D4
+  [{ name:'A', key:'a/3', acc:null }, { name:'B', key:'b/3', acc:null },
+   { name:'C', key:'c/4', acc:null }],
+  // tier 5 (waves 11-13): 6th string open (E3) + fretted notes up to A3
+  [{ name:'E', key:'e/3', acc:null }, { name:'F', key:'f/3', acc:null },
+   { name:'G', key:'g/3', acc:null }],
+];
+
+function lyricBardPool(waveNum) {
+  const maxTier = Math.min(Math.floor((waveNum - 1) / 2), LYRIC_BARD_TIERS.length - 1);
+  const notes = [];
+  for (let t = 0; t <= maxTier; t++) notes.push(...LYRIC_BARD_TIERS[t]);
+  return notes;
+}
 
 const NOTE_READING_MODULE = {
   id: 'notes',
@@ -1774,13 +1783,11 @@ const NOTE_READING_MODULE = {
       return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
     }
 
-    // Lyric Bard: guitar range, treble clef only
+    // Lyric Bard: treble clef only, progressive guitar range
     if (avatar === 'b') {
-      const candidates = [];
-      const notes = [...GUITAR_NOTE_POOL.treble.natural, ...(wave.acc ? GUITAR_NOTE_POOL.treble.accidental : [])];
-      for (const note of notes) {
-        if (hand.includes(note.name)) candidates.push({ ...note, clef: 'treble', answer: note.name });
-      }
+      const pool = lyricBardPool(gs.wave + 1);
+      const candidates = pool.filter(n => hand.includes(n.name))
+                             .map(n => ({ ...n, clef: 'treble', answer: n.name }));
       return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
     }
 
