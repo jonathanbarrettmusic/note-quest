@@ -76,6 +76,9 @@
     .lb-rank { color: var(--text-dim); font-size: .8rem; width: 24px; }
     .lb-score { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
     .lb-empty { color: var(--text-dim); font-size: .85rem; text-align: center; padding: 1rem; }
+    .lb-tabs { display:flex; gap:.5rem; width:100%; margin-bottom:.5rem; }
+    .lb-tab { flex:1; padding:.4rem; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:.4rem; color:var(--text-dim); font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; cursor:pointer; transition:all .2s; }
+    .lb-tab.active { background:var(--gold); color:#1a1a2e; border-color:var(--gold); }
 
     /* ════════════ GAME ════════════ */
     #screen-game { padding: 0; gap: 0; overflow: hidden; }
@@ -673,6 +676,10 @@
   </div>
   <button class="btn btn-primary" onclick="showModeSelect()">▶ Start Game</button>
   <div class="lb-title">🏆 Leaderboard</div>
+  <div class="lb-tabs">
+    <button class="lb-tab active" id="lb-tab-local" onclick="showLocalLB()">Local</button>
+    <button class="lb-tab" id="lb-tab-global" onclick="showGlobalLB()">Global</button>
+  </div>
   <div id="lb-menu" style="width:100%"></div>
 </div>
 
@@ -1777,7 +1784,13 @@ const NOTE_READING_MODULE = {
 
     // Bass Warrior: bass clef only, progressive range based on wave number
     if (avatar === 'w') {
-      const pool = bassWarriorPool(gs.wave + 1);
+      const naturalPool = bassWarriorPool(gs.wave + 1);
+      const pool = wave.acc
+        ? (() => {
+            const keys = new Set(naturalPool.map(n => n.key));
+            return [...naturalPool, ...NOTE_POOL.bass.accidental.filter(n => keys.has(n.key))];
+          })()
+        : naturalPool;
       const candidates = pool.filter(n => hand.includes(n.name))
                              .map(n => ({ ...n, clef: 'bass', answer: n.name }));
       return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
@@ -1785,7 +1798,13 @@ const NOTE_READING_MODULE = {
 
     // Lyric Bard: treble clef only, progressive guitar range
     if (avatar === 'b') {
-      const pool = lyricBardPool(gs.wave + 1);
+      const naturalPool = lyricBardPool(gs.wave + 1);
+      const pool = wave.acc
+        ? (() => {
+            const keys = new Set(naturalPool.map(n => n.key));
+            return [...naturalPool, ...NOTE_POOL.treble.accidental.filter(n => keys.has(n.key))];
+          })()
+        : naturalPool;
       const candidates = pool.filter(n => hand.includes(n.name))
                              .map(n => ({ ...n, clef: 'treble', answer: n.name }));
       return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
@@ -2831,6 +2850,7 @@ function gameOver() {
   const waveIdx = Math.min(gs.wave, gs.module.waves.length - 1);
   document.getElementById('go-summary').textContent =
     `Reached Wave ${waveIdx + 1}: ${gs.module.waves[waveIdx].name}`;
+  document.getElementById('go-name').value = localStorage.getItem(LB_NAME_KEY) || '';
   showScreen('gameover');
 }
 
@@ -2844,13 +2864,18 @@ function victory() {
   document.getElementById('vic-score').textContent = gs.score.toLocaleString();
   document.getElementById('vic-summary').textContent =
     `All waves defeated! Boss bonus: +${bonus.toLocaleString()}`;
+  document.getElementById('vic-name').value = localStorage.getItem(LB_NAME_KEY) || '';
   showScreen('victory');
 }
 
 // ════════════════════════════════════════════════════════════
 //  LEADERBOARD
 // ════════════════════════════════════════════════════════════
-const LB_KEY = 'notequest_lb_v1';
+const SUPABASE_URL      = 'YOUR_SUPABASE_URL';   // e.g. https://xxxx.supabase.co
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+const LB_KEY      = 'notequest_lb_v1';
+const LB_NAME_KEY = 'notequest_player_name';
 
 function loadLB() {
   try { return JSON.parse(localStorage.getItem(LB_KEY)) || []; } catch { return []; }
@@ -2860,36 +2885,110 @@ function saveLB(lb) {
   localStorage.setItem(LB_KEY, JSON.stringify(lb));
 }
 
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function submitToGlobal(entry) {
+  if (!SUPABASE_URL || SUPABASE_URL.startsWith('YOUR_')) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/leaderboard`, {
+      method: 'POST',
+      headers: {
+        'apikey':        SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type':  'application/json',
+        'Prefer':        'return=minimal',
+      },
+      body: JSON.stringify(entry),
+    });
+  } catch (_) {}
+}
+
+async function fetchGlobalLB() {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/leaderboard?select=name,score,module,won,created_at&order=score.desc&limit=20`,
+    { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
+  );
+  if (!res.ok) throw new Error(res.status);
+  return res.json();
+}
+
 function submitScore(isVictory) {
   const inputId = isVictory ? 'vic-name' : 'go-name';
   const name = document.getElementById(inputId).value.trim() || 'Anonymous';
-  const lb = loadLB();
-  lb.push({
+  localStorage.setItem(LB_NAME_KEY, name);
+
+  const entry = {
     name,
-    score: gs.score,
-    date:  new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short' }),
-    won:   isVictory,
-  });
+    score:  gs.score,
+    date:   new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short' }),
+    module: gs.module.name,
+    won:    isVictory,
+  };
+  const lb = loadLB();
+  lb.push(entry);
   lb.sort((a, b) => b.score - a.score);
   saveLB(lb.slice(0, 20));
+
+  submitToGlobal({ name, score: gs.score, module: gs.module.name, won: isVictory });
+
   showMenu();
 }
 
 function renderLB(containerId) {
-  const lb  = loadLB();
-  const el  = document.getElementById(containerId);
+  const lb = loadLB();
+  const el = document.getElementById(containerId);
   if (!lb.length) { el.innerHTML = '<p class="lb-empty">No scores yet — play to set the first record!</p>'; return; }
   el.innerHTML = `
     <table class="lb-table">
-      <tr><th>#</th><th>Name</th><th>Date</th><th class="lb-score">Score</th></tr>
+      <tr><th>#</th><th>Name</th><th>Module</th><th class="lb-score">Score</th></tr>
       ${lb.slice(0,20).map((e, i) => `
         <tr>
           <td class="lb-rank">${i+1}</td>
-          <td>${e.name}${e.won ? ' 👑' : ''}</td>
-          <td style="color:var(--text-dim);font-size:.75rem">${e.date}</td>
-          <td class="lb-score">${e.score.toLocaleString()}</td>
+          <td>${escHtml(e.name)}${e.won ? ' 👑' : ''}</td>
+          <td style="color:var(--text-dim);font-size:.75rem">${escHtml(e.module||'')}</td>
+          <td class="lb-score">${Number(e.score).toLocaleString()}</td>
         </tr>`).join('')}
     </table>`;
+}
+
+function renderGlobalLB(containerId, rows) {
+  const el = document.getElementById(containerId);
+  if (!rows || !rows.length) { el.innerHTML = '<p class="lb-empty">No global scores yet — be the first!</p>'; return; }
+  el.innerHTML = `
+    <table class="lb-table">
+      <tr><th>#</th><th>Name</th><th>Module</th><th class="lb-score">Score</th></tr>
+      ${rows.slice(0,20).map((e, i) => `
+        <tr>
+          <td class="lb-rank">${i+1}</td>
+          <td>${escHtml(e.name)}${e.won ? ' 👑' : ''}</td>
+          <td style="color:var(--text-dim);font-size:.75rem">${escHtml(e.module||'')}</td>
+          <td class="lb-score">${Number(e.score).toLocaleString()}</td>
+        </tr>`).join('')}
+    </table>`;
+}
+
+function showLocalLB() {
+  document.getElementById('lb-tab-local').classList.add('active');
+  document.getElementById('lb-tab-global').classList.remove('active');
+  renderLB('lb-menu');
+}
+
+async function showGlobalLB() {
+  document.getElementById('lb-tab-global').classList.add('active');
+  document.getElementById('lb-tab-local').classList.remove('active');
+  const el = document.getElementById('lb-menu');
+  if (!SUPABASE_URL || SUPABASE_URL.startsWith('YOUR_')) {
+    el.innerHTML = '<p class="lb-empty">Global leaderboard not configured.</p>';
+    return;
+  }
+  el.innerHTML = '<p class="lb-empty">Loading...</p>';
+  try {
+    renderGlobalLB('lb-menu', await fetchGlobalLB());
+  } catch (_) {
+    el.innerHTML = '<p class="lb-empty">Could not load global scores.</p>';
+  }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -3345,7 +3444,7 @@ function showMenu() {
   stopTimer();
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   gs.running = false;
-  renderLB('lb-menu');
+  showLocalLB();
   showScreen('menu');
   playMusic('menu');
 }
@@ -3355,7 +3454,7 @@ function showMenu() {
 // ════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   resetState();
-  renderLB('lb-menu');
+  showLocalLB();
   document.getElementById('preview-m').innerHTML = PLAYER_SPRITES.m;
   document.getElementById('preview-f').innerHTML = PLAYER_SPRITES.f;
   document.getElementById('preview-b').innerHTML = PLAYER_SPRITES.b;
