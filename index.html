@@ -911,13 +911,6 @@ const NOTE_POOL = {
       { name:'E', key:'e/5', acc:null },
       { name:'F', key:'f/5', acc:null },
     ],
-    accidental: [
-      { name:'F♯', key:'f/4', acc:'#' },
-      { name:'C♯', key:'c/5', acc:'#' },
-      { name:'G♯', key:'g/4', acc:'#' },
-      { name:'B♭', key:'b/4', acc:'b' },
-      { name:'E♭', key:'e/5', acc:'b' },
-    ],
   },
   bass: {
     natural: [
@@ -932,12 +925,6 @@ const NOTE_POOL = {
       { name:'A', key:'a/3', acc:null },
       { name:'C', key:'c/4', acc:null },
     ],
-    accidental: [
-      { name:'B♭', key:'b/2', acc:'b' },
-      { name:'E♭', key:'e/3', acc:'b' },
-      { name:'F♯', key:'f/3', acc:'#' },
-      { name:'A♭', key:'a/3', acc:'b' },
-    ],
   },
   alto: {
     natural: [
@@ -951,15 +938,10 @@ const NOTE_POOL = {
       { name:'F', key:'f/4', acc:null },
       { name:'G', key:'g/4', acc:null },
     ],
-    accidental: [
-      { name:'B♭', key:'b/3', acc:'b' },
-      { name:'F♯', key:'f/4', acc:'#' },
-      { name:'A♭', key:'a/3', acc:'b' },
-    ],
   },
 };
 
-// All possible card names for distractor pool
+// All possible card names for distractor pool (the sharps and flats are the ones NOTE_KEYS make)
 const ALL_NAMES = {
   natural:     ['C','D','E','F','G','A','B'],
   accidental:  ['F♯','C♯','G♯','B♭','E♭','A♭'],
@@ -1891,14 +1873,46 @@ const GRADUAL_STAGES = {
 };
 const GRADUAL_WAVES_PER_STAGE = 2;
 
-/** The notes a clef can ask at this wave on the gradual range, with accidentals on those notes once the wave has them. */
+/** The notes a clef can ask at this wave on the gradual range. */
 function gradualPool(clef, waveIdx, waves) {
   const intro = waves.findIndex(w => w.clefs.includes(clef));
   const stage = Math.min(GRADUAL_STAGES[clef].length - 1, Math.floor(Math.max(0, waveIdx - intro) / GRADUAL_WAVES_PER_STAGE));
   const keys = GRADUAL_STAGES[clef].slice(0, stage + 1).flat();
-  const notes = keys.map(key => ({ name: key[0].toUpperCase(), key, acc: null }));
-  if (waves[waveIdx].acc) notes.push(...NOTE_POOL[clef].accidental.filter(n => keys.includes(n.key)));
-  return notes;
+  return keys.map(key => ({ name: key[0].toUpperCase(), key, acc: null }));
+}
+
+// Waves with sharps and flats (wave.acc) show a key signature: a note on a line or space the key changes is answered as
+// that sharp or flat. Notes never carry a written accidental, so without a key signature every answer is a natural.
+const NOTE_KEYS = [
+  { vf:'G',  alter:{ f:'♯' } },
+  { vf:'D',  alter:{ f:'♯', c:'♯' } },
+  { vf:'A',  alter:{ f:'♯', c:'♯', g:'♯' } },
+  { vf:'F',  alter:{ b:'♭' } },
+  { vf:'Bb', alter:{ b:'♭', e:'♭' } },
+  { vf:'Eb', alter:{ b:'♭', e:'♭', a:'♭' } },
+];
+
+/**
+ * A question from lists of natural notes (each note with its clef): one list is chosen evenly, then a note whose answer
+ * is in the hand. On waves with sharps and flats the question gets a key signature, and half the time asks a note the
+ * key changes. Returns null when nothing in the hand fits.
+ */
+function noteQuestion(lists, hand, wave) {
+  const keys = wave.acc ? [...NOTE_KEYS].sort(() => Math.random() - .5) : [null];
+  for (const key of keys) {
+    const options = lists
+      .map(list => list.map(n => {
+        const alter = key?.alter[n.key[0]];
+        return { ...n, acc: null, keySig: key?.vf, answer: alter ? n.name + alter : n.name };
+      }).filter(q => hand.includes(q.answer)))
+      .filter(list => list.length);
+    if (!options.length) continue;
+    let list = options[Math.floor(Math.random() * options.length)];
+    const changed = list.filter(q => q.answer !== q.name);
+    if (key && changed.length && Math.random() < .5) list = changed;
+    return list[Math.floor(Math.random() * list.length)];
+  }
+  return null;
 }
 
 const NOTE_READING_MODULE = {
@@ -1917,52 +1931,18 @@ const NOTE_READING_MODULE = {
     const avatar = gs.playerAvatar;
 
     // Bass Warrior: bass clef only, progressive range based on wave number
-    if (avatar === 'w') {
-      const naturalPool = bassWarriorPool(gs.wave + 1);
-      const pool = wave.acc
-        ? (() => {
-            const keys = new Set(naturalPool.map(n => n.key));
-            return [...naturalPool, ...NOTE_POOL.bass.accidental.filter(n => keys.has(n.key))];
-          })()
-        : naturalPool;
-      const candidates = pool.filter(n => hand.includes(n.name))
-                             .map(n => ({ ...n, clef: 'bass', answer: n.name }));
-      return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
-    }
+    if (avatar === 'w') return noteQuestion([bassWarriorPool(gs.wave + 1).map(n => ({ ...n, clef: 'bass' }))], hand, wave);
 
     // Lyric Bard: treble clef only, progressive guitar range
-    if (avatar === 'b') {
-      const naturalPool = lyricBardPool(gs.wave + 1);
-      const pool = wave.acc
-        ? (() => {
-            const keys = new Set(naturalPool.map(n => n.key));
-            return [...naturalPool, ...NOTE_POOL.treble.accidental.filter(n => keys.has(n.key))];
-          })()
-        : naturalPool;
-      const candidates = pool.filter(n => hand.includes(n.name))
-                             .map(n => ({ ...n, clef: 'treble', answer: n.name }));
-      return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
-    }
+    if (avatar === 'b') return noteQuestion([lyricBardPool(gs.wave + 1).map(n => ({ ...n, clef: 'treble' }))], hand, wave);
 
     // Gradual range: choose a clef first, so a newly arrived clef with only a few notes still comes up often
     if (gs.diff.gradual) {
-      const byClef = wave.clefs
-        .map(clef => gradualPool(clef, gs.wave, this.waves).filter(n => hand.includes(n.name)).map(n => ({ ...n, clef, answer: n.name })))
-        .filter(list => list.length);
-      if (!byClef.length) return null;
-      const list = byClef[Math.floor(Math.random() * byClef.length)];
-      return list[Math.floor(Math.random() * list.length)];
+      return noteQuestion(wave.clefs.map(clef => gradualPool(clef, gs.wave, this.waves).map(n => ({ ...n, clef }))), hand, wave);
     }
 
     // Default: use wave clefs and standard pool
-    const candidates = [];
-    for (const clef of wave.clefs) {
-      const notes = [...NOTE_POOL[clef].natural, ...(wave.acc ? NOTE_POOL[clef].accidental : [])];
-      for (const note of notes) {
-        if (hand.includes(note.name)) candidates.push({ ...note, clef, answer: note.name });
-      }
-    }
-    return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
+    return noteQuestion([wave.clefs.flatMap(clef => NOTE_POOL[clef].natural.map(n => ({ ...n, clef })))], hand, wave);
   },
 
   render(question) { renderNote(question.clef, question); },
@@ -2454,6 +2434,7 @@ function renderNote(clef, noteData) {
   // Y=28 keeps the clef/label clear at the top while maximising space below.
   const stave = new VF.Stave(10, 28, W - 20);
   stave.addClef(clef);
+  if (noteData.keySig) stave.addKeySignature(noteData.keySig);
   stave.setContext(ctx).draw();
 
   const note = new VF.StaveNote({ keys: [noteData.key], duration: 'w', clef });
