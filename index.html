@@ -588,6 +588,32 @@
     .avatar-stats { font-size: .62rem; color: var(--text-dim); margin-top: .35rem; opacity: .8; }
     #btn-begin:disabled { opacity: .35; cursor: not-allowed; }
 
+    /* Difficulty */
+    .difficulty { width: 100%; display: flex; flex-direction: column; gap: .5rem; }
+    .diff-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: .4rem; }
+    .diff-btn {
+      background: rgba(255,255,255,.06); color: var(--text);
+      border: 2px solid rgba(255,255,255,.12); border-radius: var(--r);
+      padding: .55rem .2rem; min-height: 44px; font: inherit; font-size: .8rem; font-weight: 800;
+      cursor: pointer; transition: transform .1s, border-color .15s, background .15s;
+    }
+    .diff-btn:active { transform: scale(.96); }
+    .diff-btn[aria-checked="true"] { border-color: var(--gold); background: rgba(255,215,0,.07); color: var(--gold); }
+    .diff-desc { font-size: .75rem; color: var(--text-dim); text-align: center; min-height: 1.2em; }
+    .diff-custom {
+      display: flex; flex-direction: column; gap: .55rem;
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: var(--r); padding: .75rem .85rem;
+    }
+    .diff-custom[hidden] { display: none; }
+    .diff-slider { display: grid; grid-template-columns: 1fr auto; gap: .15rem .75rem; font-size: .78rem; }
+    .diff-slider output { color: var(--gold); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .diff-slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--gold); }
+    .lb-diff {
+      display: inline-block; margin-left: .35rem; padding: .05rem .35rem; border-radius: 4px;
+      background: rgba(255,255,255,.08); color: var(--text-dim); font-size: .62rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .04em; vertical-align: middle;
+    }
+
     /* ════════════ MODE SELECT ════════════ */
     #screen-mode {
       align-items: center;
@@ -721,6 +747,24 @@
       <div class="avatar-card-name">Bass Warrior</div>
       <div class="avatar-card-class">🛡️ Depths Guardian</div>
       <div class="avatar-stats">❤️ 140 HP &nbsp;·&nbsp; 🛡️ +10% combo</div>
+    </div>
+  </div>
+  <div class="difficulty">
+    <div class="lb-title">Difficulty</div>
+    <div class="diff-row" role="radiogroup" aria-label="Difficulty">
+      <button type="button" class="diff-btn" role="radio" data-diff="easy" onclick="selectDifficulty('easy')">Easy</button>
+      <button type="button" class="diff-btn" role="radio" data-diff="normal" onclick="selectDifficulty('normal')">Normal</button>
+      <button type="button" class="diff-btn" role="radio" data-diff="heroic" onclick="selectDifficulty('heroic')">Heroic</button>
+      <button type="button" class="diff-btn" role="radio" data-diff="custom" onclick="selectDifficulty('custom')">Custom</button>
+    </div>
+    <div class="diff-desc" id="diff-desc"></div>
+    <div class="diff-custom" id="diff-custom" hidden>
+      <label class="diff-slider">⏱ Time to answer <output id="diff-time-out"></output>
+        <input type="range" id="diff-time" min="50" max="200" step="10" oninput="setCustom('time', this.value)"></label>
+      <label class="diff-slider">⚔️ Enemy damage <output id="diff-atk-out"></output>
+        <input type="range" id="diff-atk" min="50" max="200" step="10" oninput="setCustom('atk', this.value)"></label>
+      <label class="diff-slider">❤️ Enemy health <output id="diff-hp-out"></output>
+        <input type="range" id="diff-hp" min="50" max="200" step="10" oninput="setCustom('hp', this.value)"></label>
     </div>
   </div>
   <button class="btn btn-gold" id="btn-begin" onclick="beginQuest()" disabled>▶ Begin Quest</button>
@@ -1503,6 +1547,63 @@ const AVATAR_STATS = {
 };
 
 // ════════════════════════════════════════════════════════════
+//  DIFFICULTY
+// ════════════════════════════════════════════════════════════
+// Multipliers on each wave's answer time, enemy damage and enemy health, and on every point scored.
+// Normal is the game as designed; Custom's three sliders run from half to double.
+const DIFFICULTIES = {
+  easy:   { name: 'Easy',   time: 1.5,  atk: 0.6, hp: 0.75, score: 0.75, desc: 'More time to answer, gentler enemies. Scores ×0.75.' },
+  normal: { name: 'Normal', time: 1,    atk: 1,   hp: 1,    score: 1,    desc: 'The quest as it was meant to be played.' },
+  heroic: { name: 'Heroic', time: 0.75, atk: 1.4, hp: 1.25, score: 1.5,  desc: 'Less time, fiercer enemies. Scores ×1.5.' },
+  custom: { name: 'Custom', score: 1, desc: 'Set your own challenge. Scores ×1.' },
+};
+const DIFF_KEY = 'notequest_difficulty_v1';
+
+function loadDifficulty() {
+  const fallback = { key: 'normal', custom: { time: 100, atk: 100, hp: 100 } };
+  try {
+    const saved = JSON.parse(localStorage.getItem(DIFF_KEY));
+    if (!saved || !DIFFICULTIES[saved.key]) return fallback;
+    return { key: saved.key, custom: { ...fallback.custom, ...saved.custom } };
+  } catch { return fallback; }
+}
+let difficulty = loadDifficulty();
+
+function saveDifficulty() {
+  try { localStorage.setItem(DIFF_KEY, JSON.stringify(difficulty)); } catch {}
+}
+
+/** The chosen difficulty as multipliers: { key, name, time, atk, hp, score }. */
+function difficultySettings() {
+  const d = DIFFICULTIES[difficulty.key];
+  if (difficulty.key !== 'custom') return { key: difficulty.key, name: d.name, time: d.time, atk: d.atk, hp: d.hp, score: d.score };
+  const c = difficulty.custom;
+  return { key: 'custom', name: d.name, time: c.time / 100, atk: c.atk / 100, hp: c.hp / 100, score: d.score };
+}
+
+function renderDifficulty() {
+  document.querySelectorAll('.diff-btn').forEach(b => b.setAttribute('aria-checked', b.dataset.diff === difficulty.key ? 'true' : 'false'));
+  document.getElementById('diff-desc').textContent = DIFFICULTIES[difficulty.key].desc;
+  document.getElementById('diff-custom').hidden = difficulty.key !== 'custom';
+  for (const k of ['time', 'atk', 'hp']) {
+    document.getElementById(`diff-${k}`).value = difficulty.custom[k];
+    document.getElementById(`diff-${k}-out`).textContent = `${difficulty.custom[k]}%`;
+  }
+}
+
+function selectDifficulty(key) {
+  difficulty.key = key;
+  saveDifficulty();
+  renderDifficulty();
+}
+
+function setCustom(k, value) {
+  difficulty.custom[k] = Number(value);
+  saveDifficulty();
+  document.getElementById(`diff-${k}-out`).textContent = `${value}%`;
+}
+
+// ════════════════════════════════════════════════════════════
 //  WAVE CONFIG
 // ════════════════════════════════════════════════════════════
 const WAVES = [
@@ -2229,6 +2330,7 @@ function resetState() {
     timerRaf:        null,
     answered:        false,
     running:         false,
+    diff:            { key: 'normal', name: 'Normal', time: 1, atk: 1, hp: 1, score: 1 },
   };
 }
 
@@ -2545,7 +2647,7 @@ function handleCorrect(cardEl) {
   sfx('correct');
   gs.combo++;
   const comboMult = Math.min(4, 1 + (gs.combo - 1) * 0.5) * gs.comboBonus;
-  const pts = Math.round((100 + timeBonus()) * comboMult);
+  const pts = Math.round((100 + timeBonus()) * comboMult * gs.diff.score);
   gs.score += pts;
 
   // Animate card
@@ -2622,9 +2724,10 @@ function animatePlayerHurt() {
 
 function applyEnemyAttack() {
   const wave = gs.module.waves[gs.wave];
-  gs.playerHp = Math.max(0, gs.playerHp - wave.atk);
+  const atk  = Math.max(1, Math.round(wave.atk * gs.diff.atk));
+  gs.playerHp = Math.max(0, gs.playerHp - atk);
   document.getElementById('player-hp-bar').classList.add('danger');
-  spawnFloater(`-${wave.atk}`, 'dmg', document.getElementById('player-hp-text'));
+  spawnFloater(`-${atk}`, 'dmg', document.getElementById('player-hp-text'));
   animatePlayerHit();
   animatePlayerHurt();
   later(() => document.getElementById('player-hp-bar').classList.remove('danger'), 500);
@@ -2638,7 +2741,7 @@ function applyEnemyAttack() {
 function enemyDefeated() {
   sfx('defeat');
   const wave = gs.module.waves[gs.wave];
-  gs.score += wave.bonus;
+  gs.score += Math.round(wave.bonus * gs.diff.score);
 
   if (wave.bossPhase === 1) {
     gs.wave++;
@@ -2667,9 +2770,9 @@ function enemyDefeated() {
 // ════════════════════════════════════════════════════════════
 function startWave() {
   const wave = gs.module.waves[gs.wave];
-  gs.enemyHp    = wave.hp;
-  gs.enemyMaxHp = wave.hp;
-  gs.timerLimit = wave.time;
+  gs.enemyHp    = Math.round(wave.hp * gs.diff.hp);
+  gs.enemyMaxHp = gs.enemyHp;
+  gs.timerLimit = Math.round(wave.time * gs.diff.time);
 
   const spriteEl = document.getElementById('enemy-sprite');
   spriteEl.innerHTML = SPRITES[Math.min(gs.wave, SPRITES.length - 1)];
@@ -2680,7 +2783,7 @@ function startWave() {
   spriteEl.className = spriteClass;
   document.getElementById('enemy-name').textContent =
     wave.bossPhase === 2 ? `🔥 ${wave.name} 🔥` : wave.isBoss ? `⚡ ${wave.name}` : wave.name;
-  document.getElementById('enemy-hp-max').textContent = wave.hp;
+  document.getElementById('enemy-hp-max').textContent = gs.enemyMaxHp;
 
   setEnvironment(wave.env);
   updateUI();
@@ -2833,6 +2936,7 @@ function beginQuest() {
   gs.playerHp    = stats.hp;
   gs.playerMaxHp = stats.hp;
   gs.comboBonus  = stats.comboBonus;
+  gs.diff        = difficultySettings();
   _vfRend = null; _vfCtx = null; _vfW = 0; _vfH = 0;
   initHand();
   gs.running = true;
@@ -2849,7 +2953,7 @@ function gameOver() {
   document.getElementById('go-score').textContent = gs.score.toLocaleString();
   const waveIdx = Math.min(gs.wave, gs.module.waves.length - 1);
   document.getElementById('go-summary').textContent =
-    `Reached Wave ${waveIdx + 1}: ${gs.module.waves[waveIdx].name}`;
+    `Reached Wave ${waveIdx + 1}: ${gs.module.waves[waveIdx].name} · ${gs.diff.name}`;
   document.getElementById('go-name').value = localStorage.getItem(LB_NAME_KEY) || '';
   showScreen('gameover');
 }
@@ -2859,11 +2963,11 @@ function victory() {
   stopTimer();
   gs.running = false;
   playMusic('menu');
-  const bonus = 5000;
+  const bonus = Math.round(5000 * gs.diff.score);
   gs.score += bonus;
   document.getElementById('vic-score').textContent = gs.score.toLocaleString();
   document.getElementById('vic-summary').textContent =
-    `All waves defeated! Boss bonus: +${bonus.toLocaleString()}`;
+    `All waves defeated on ${gs.diff.name}! Boss bonus: +${bonus.toLocaleString()}`;
   document.getElementById('vic-name').value = localStorage.getItem(LB_NAME_KEY) || '';
   showScreen('victory');
 }
@@ -2907,7 +3011,7 @@ async function submitToGlobal(entry) {
 
 async function fetchGlobalLB() {
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/leaderboard?select=name,score,module,won,created_at&order=score.desc&limit=20`,
+    `${SUPABASE_URL}/rest/v1/leaderboard?select=name,score,module,won,difficulty,created_at&order=score.desc&limit=20`,
     { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
   );
   if (!res.ok) throw new Error(res.status);
@@ -2925,13 +3029,14 @@ function submitScore(isVictory) {
     date:   new Date().toLocaleDateString('en-GB', { day:'numeric', month:'short' }),
     module: gs.module.name,
     won:    isVictory,
+    difficulty: gs.diff.name,
   };
   const lb = loadLB();
   lb.push(entry);
   lb.sort((a, b) => b.score - a.score);
   saveLB(lb.slice(0, 20));
 
-  submitToGlobal({ name, score: gs.score, module: gs.module.name, won: isVictory });
+  submitToGlobal({ name, score: gs.score, module: gs.module.name, won: isVictory, difficulty: gs.diff.name });
 
   showMenu();
 }
@@ -2946,7 +3051,7 @@ function renderLB(containerId) {
       ${lb.slice(0,20).map((e, i) => `
         <tr>
           <td class="lb-rank">${i+1}</td>
-          <td>${escHtml(e.name)}${e.won ? ' 👑' : ''}</td>
+          <td>${escHtml(e.name)}${e.won ? ' 👑' : ''}<span class="lb-diff">${escHtml(e.difficulty || 'Normal')}</span></td>
           <td style="color:var(--text-dim);font-size:.75rem">${escHtml(e.module||'')}</td>
           <td class="lb-score">${Number(e.score).toLocaleString()}</td>
         </tr>`).join('')}
@@ -2962,7 +3067,7 @@ function renderGlobalLB(containerId, rows) {
       ${rows.slice(0,20).map((e, i) => `
         <tr>
           <td class="lb-rank">${i+1}</td>
-          <td>${escHtml(e.name)}${e.won ? ' 👑' : ''}</td>
+          <td>${escHtml(e.name)}${e.won ? ' 👑' : ''}<span class="lb-diff">${escHtml(e.difficulty || 'Normal')}</span></td>
           <td style="color:var(--text-dim);font-size:.75rem">${escHtml(e.module||'')}</td>
           <td class="lb-score">${Number(e.score).toLocaleString()}</td>
         </tr>`).join('')}
@@ -3455,6 +3560,7 @@ function showMenu() {
 document.addEventListener('DOMContentLoaded', () => {
   resetState();
   showLocalLB();
+  renderDifficulty();
   document.getElementById('preview-m').innerHTML = PLAYER_SPRITES.m;
   document.getElementById('preview-f').innerHTML = PLAYER_SPRITES.f;
   document.getElementById('preview-b').innerHTML = PLAYER_SPRITES.b;
