@@ -608,6 +608,9 @@
     .diff-slider { display: grid; grid-template-columns: 1fr auto; gap: .15rem .75rem; font-size: .78rem; }
     .diff-slider output { color: var(--gold); font-weight: 700; font-variant-numeric: tabular-nums; }
     .diff-slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--gold); }
+    .diff-toggle { display: flex; align-items: flex-start; gap: .6rem; font-size: .78rem; cursor: pointer; padding-top: .15rem; }
+    .diff-toggle input { width: 18px; height: 18px; margin-top: .1rem; accent-color: var(--gold); flex-shrink: 0; }
+    .diff-toggle small { display: block; color: var(--text-dim); font-size: .68rem; }
     .lb-diff {
       display: inline-block; margin-left: .35rem; padding: .05rem .35rem; border-radius: 4px;
       background: rgba(255,255,255,.08); color: var(--text-dim); font-size: .62rem; font-weight: 700;
@@ -765,6 +768,8 @@
         <input type="range" id="diff-atk" min="50" max="200" step="10" oninput="setCustom('atk', this.value)"></label>
       <label class="diff-slider">❤️ Enemy health <output id="diff-hp-out"></output>
         <input type="range" id="diff-hp" min="50" max="200" step="10" oninput="setCustom('hp', this.value)"></label>
+      <label class="diff-toggle"><input type="checkbox" id="diff-gradual" onchange="setGradual(this.checked)">
+        <span>🎼 Gradual note range<small>Note Reading: start on the bottom lines and build up</small></span></label>
     </div>
   </div>
   <button class="btn btn-gold" id="btn-begin" onclick="beginQuest()" disabled>▶ Begin Quest</button>
@@ -1550,17 +1555,18 @@ const AVATAR_STATS = {
 //  DIFFICULTY
 // ════════════════════════════════════════════════════════════
 // Multipliers on each wave's answer time, enemy damage and enemy health, and on every point scored.
-// Normal is the game as designed; Custom's three sliders run from half to double.
+// Normal is the game as designed; Custom's three sliders run from half to double. 'gradual' widens the notes asked in
+// Note Reading step by step (see GRADUAL_STAGES).
 const DIFFICULTIES = {
-  easy:   { name: 'Easy',   time: 1.5,  atk: 0.6, hp: 0.75, score: 0.75, desc: 'More time to answer, gentler enemies. Scores ×0.75.' },
-  normal: { name: 'Normal', time: 1,    atk: 1,   hp: 1,    score: 1,    desc: 'The quest as it was meant to be played.' },
-  heroic: { name: 'Heroic', time: 0.75, atk: 1.4, hp: 1.25, score: 1.5,  desc: 'Less time, fiercer enemies. Scores ×1.5.' },
+  easy:   { name: 'Easy',   time: 1.5,  atk: 0.6, hp: 0.75, score: 0.75, gradual: true,  desc: 'More time, gentler enemies, and notes that build up from the bottom lines. Scores ×0.75.' },
+  normal: { name: 'Normal', time: 1,    atk: 1,   hp: 1,    score: 1,    gradual: false, desc: 'The quest as it was meant to be played.' },
+  heroic: { name: 'Heroic', time: 0.75, atk: 1.4, hp: 1.25, score: 1.5,  gradual: false, desc: 'Less time, fiercer enemies. Scores ×1.5.' },
   custom: { name: 'Custom', score: 1, desc: 'Set your own challenge. Scores ×1.' },
 };
 const DIFF_KEY = 'notequest_difficulty_v1';
 
 function loadDifficulty() {
-  const fallback = { key: 'normal', custom: { time: 100, atk: 100, hp: 100 } };
+  const fallback = { key: 'normal', custom: { time: 100, atk: 100, hp: 100, gradual: false } };
   try {
     const saved = JSON.parse(localStorage.getItem(DIFF_KEY));
     if (!saved || !DIFFICULTIES[saved.key]) return fallback;
@@ -1573,12 +1579,12 @@ function saveDifficulty() {
   try { localStorage.setItem(DIFF_KEY, JSON.stringify(difficulty)); } catch {}
 }
 
-/** The chosen difficulty as multipliers: { key, name, time, atk, hp, score }. */
+/** The chosen difficulty: multipliers { key, name, time, atk, hp, score } and whether the note range builds up. */
 function difficultySettings() {
   const d = DIFFICULTIES[difficulty.key];
-  if (difficulty.key !== 'custom') return { key: difficulty.key, name: d.name, time: d.time, atk: d.atk, hp: d.hp, score: d.score };
+  if (difficulty.key !== 'custom') return { key: difficulty.key, name: d.name, time: d.time, atk: d.atk, hp: d.hp, score: d.score, gradual: d.gradual };
   const c = difficulty.custom;
-  return { key: 'custom', name: d.name, time: c.time / 100, atk: c.atk / 100, hp: c.hp / 100, score: d.score };
+  return { key: 'custom', name: d.name, time: c.time / 100, atk: c.atk / 100, hp: c.hp / 100, score: d.score, gradual: !!c.gradual };
 }
 
 function renderDifficulty() {
@@ -1589,6 +1595,12 @@ function renderDifficulty() {
     document.getElementById(`diff-${k}`).value = difficulty.custom[k];
     document.getElementById(`diff-${k}-out`).textContent = `${difficulty.custom[k]}%`;
   }
+  document.getElementById('diff-gradual').checked = !!difficulty.custom.gradual;
+}
+
+function setGradual(on) {
+  difficulty.custom.gradual = on;
+  saveDifficulty();
 }
 
 function selectDifficulty(key) {
@@ -1868,6 +1880,27 @@ function lyricBardPool(waveNum) {
   return notes;
 }
 
+// Gradual note range (Easy, or Custom with the switch on): each clef starts on its bottom three lines, then all five
+// lines, then the spaces, then a ledger line above and below (with the spaces just outside the stave). A clef moves up a
+// stage every 2 waves, counted from the wave it first appears in, so bass (wave 4) and alto (wave 8) start again at the
+// bottom while the clefs already met keep their wider range.
+const GRADUAL_STAGES = {
+  treble: [['e/4','g/4','b/4'], ['d/5','f/5'], ['f/4','a/4','c/5','e/5'], ['d/4','c/4','g/5','a/5']],
+  bass:   [['g/2','b/2','d/3'], ['f/3','a/3'], ['a/2','c/3','e/3','g/3'], ['f/2','e/2','b/3','c/4']],
+  alto:   [['f/3','a/3','c/4'], ['e/4','g/4'], ['g/3','b/3','d/4','f/4'], ['e/3','d/3','a/4','b/4']],
+};
+const GRADUAL_WAVES_PER_STAGE = 2;
+
+/** The notes a clef can ask at this wave on the gradual range, with accidentals on those notes once the wave has them. */
+function gradualPool(clef, waveIdx, waves) {
+  const intro = waves.findIndex(w => w.clefs.includes(clef));
+  const stage = Math.min(GRADUAL_STAGES[clef].length - 1, Math.floor(Math.max(0, waveIdx - intro) / GRADUAL_WAVES_PER_STAGE));
+  const keys = GRADUAL_STAGES[clef].slice(0, stage + 1).flat();
+  const notes = keys.map(key => ({ name: key[0].toUpperCase(), key, acc: null }));
+  if (waves[waveIdx].acc) notes.push(...NOTE_POOL[clef].accidental.filter(n => keys.includes(n.key)));
+  return notes;
+}
+
 const NOTE_READING_MODULE = {
   id: 'notes',
   name: 'Note Reading',
@@ -1909,6 +1942,16 @@ const NOTE_READING_MODULE = {
       const candidates = pool.filter(n => hand.includes(n.name))
                              .map(n => ({ ...n, clef: 'treble', answer: n.name }));
       return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
+    }
+
+    // Gradual range: choose a clef first, so a newly arrived clef with only a few notes still comes up often
+    if (gs.diff.gradual) {
+      const byClef = wave.clefs
+        .map(clef => gradualPool(clef, gs.wave, this.waves).filter(n => hand.includes(n.name)).map(n => ({ ...n, clef, answer: n.name })))
+        .filter(list => list.length);
+      if (!byClef.length) return null;
+      const list = byClef[Math.floor(Math.random() * byClef.length)];
+      return list[Math.floor(Math.random() * list.length)];
     }
 
     // Default: use wave clefs and standard pool
@@ -2330,7 +2373,7 @@ function resetState() {
     timerRaf:        null,
     answered:        false,
     running:         false,
-    diff:            { key: 'normal', name: 'Normal', time: 1, atk: 1, hp: 1, score: 1 },
+    diff:            { key: 'normal', name: 'Normal', time: 1, atk: 1, hp: 1, score: 1, gradual: false },
   };
 }
 
